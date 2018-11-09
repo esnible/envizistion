@@ -1,0 +1,4 @@
+{
+	"ca_cert": "Certificate Path: /etc/certs/root-cert.pem, Serial Number: 9bf28610a7e5e165faec7505442306ba, Days until Expiration: 355",
+	"cert_chain": "Certificate Path: /etc/certs/cert-chain.pem, Serial Number: 4808109fcc7b8ddea256a55df6fb7f36, Days until Expiration: 0"
+}
