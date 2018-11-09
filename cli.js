@@ -157,7 +157,7 @@ function processCertJson(rawCerts) {
 function clusterHasTraffic(cluster, stats) {
 	var clusterStats = stats.cluster[cluster];
 	if (!clusterStats) {
-		console.log("warning no stats for cluster " + cluster);
+		console.log("warning no stats for cluster " + cluster); // happens if no K8s Service references pod
 		return false; // should never happen, might happen if there is a stats/config mismatch
 	}
 	return clusterStats.upstream_rq_2xx > 0
@@ -182,7 +182,7 @@ function printCert(label, filename, certs) {
 	  certs[filename].serial + " (days until expiration: " + certs[filename].daysLeft + ")");
 }
 
-function printListener(listener, stats, certs, outRoutes) {
+function printListener(listener, stats, certs, outRoutes, outClusters) {
 	// console.log(JSON.stringify(listener));
 	console.log("Listener: " + listener.name);
 	
@@ -201,6 +201,11 @@ function printListener(listener, stats, certs, outRoutes) {
 					console.log("  RDS Route: '" + filter.config.rds.route_config_name + "'");
 					outRoutes.push(filter.config.rds.route_config_name);
 				}
+			} else if (filter.name == "mixer") {
+				// Ignore filter.config for mixer filters
+			} else if (filter.name == "envoy.tcp_proxy") {
+				console.log("  TCP target cluster: '" + filter.config.cluster + "'");
+				outClusters.push(filter.config.cluster);
 			} else {
 				console.log("  Filter name: " + filter.name + " has keys " + Object.keys(filter));
 			} 
@@ -218,14 +223,25 @@ function printListener(listener, stats, certs, outRoutes) {
 		}
 	}
 
-	if (stats.listener[listener.name].http[listener.name].downstream_rq_2xx > 0) {
-		console.log("  Successful HTTP 2xx " + stats.listener[listener.name].http[listener.name].downstream_rq_2xx);
-	}
-	if (stats.listener[listener.name].http[listener.name].downstream_rq_4xx > 0) {
-		console.log("  4xx ERRORS " + stats.listener[listener.name].http[listener.name].downstream_rq_4xx);
-	}
-	if (stats.listener[listener.name].http[listener.name].downstream_rq_5xx > 0) {
-		console.log("  5xx ERRORS " + stats.listener[listener.name].http[listener.name].downstream_rq_5xx);
+	if (stats.listener[listener.name].http) {
+		if (stats.listener[listener.name].http[listener.name].downstream_rq_2xx > 0) {
+			console.log("  Successful HTTP 2xx " + stats.listener[listener.name].http[listener.name].downstream_rq_2xx);
+		} else {
+			console.log("  Warning no successful HTTP");
+		}
+		if (stats.listener[listener.name].http[listener.name].downstream_rq_4xx > 0) {
+			console.log("  4xx ERRORS " + stats.listener[listener.name].http[listener.name].downstream_rq_4xx);
+		}
+		if (stats.listener[listener.name].http[listener.name].downstream_rq_5xx > 0) {
+			console.log("  5xx ERRORS " + stats.listener[listener.name].http[listener.name].downstream_rq_5xx);
+		}
+	} else if (stats.listener[listener.name].ssl) {
+		console.log("  SSL handshakes: " + stats.listener[listener.name].ssl.handshake);
+		if (stats.listener[listener.name].ssl.connection_error) {
+			console.log("  SSL connection errors: " + stats.listener[listener.name].ssl.connection_error);
+		}
+	} else {
+		console.log("  WARNING: No SSL or HTTP traffic stats");
 	}
 }
 
@@ -286,22 +302,35 @@ function printCluster(cluster, stats, certs) {
 	}
 }
 
+function inboundListener(listener) {
+	for (var filterChain of listener.filter_chains) {
+		// If the listener is terminating TLS consider it inbound
+		if (filterChain.tls_context) {
+			return true;
+		}
+	}
+	return false;
+}
+
 function processEnvoy(configDump, stats, certs) {
-	console.log("Listeners with traffic:");
+	console.log("Listeners:");
 	var listenersWithTraffic = 0;
 	var referencedRoutes = [];
+	var referencedClusters = [];
 	if (configDump.configs.listeners.dynamic_active_listeners) {
 		for (var activeListener of configDump.configs.listeners.dynamic_active_listeners) {
-			if (listenerHasTraffic(activeListener.listener.name, stats)) {
-				printListener(activeListener.listener, stats, certs, referencedRoutes);
+			if (listenerHasTraffic(activeListener.listener.name, stats) || inboundListener(activeListener.listener)) {
+				printListener(activeListener.listener, stats, certs, referencedRoutes, referencedClusters);
 				listenersWithTraffic++;
 			}
 		}
 	}
+	if (listenersWithTraffic == 0) {
+		console.log("WARNING: No listeners");
+	}
 	console.log();
 
-	console.log("Referenced Routes:");
-	var referencedClusters = [];
+	console.log("Routes:");
 	if (configDump.configs.routes) {
 		if (configDump.configs.routes.static_route_configs) {
 			for (var staticRoute of configDump.configs.routes.static_route_configs) {
@@ -318,7 +347,7 @@ function processEnvoy(configDump, stats, certs) {
 	}
 	console.log();
 
-	console.log("Clusters with traffic:");
+	console.log("Clusters:");
 	for (var staticCluster of configDump.configs.clusters.static_clusters) {
 		printCluster(staticCluster.cluster, stats, certs);
 	}
