@@ -74,8 +74,10 @@ function escapesFromRoutes(routes) {
 				// but we ignore those routes.
 			}
 		}
-		for (var dynamicRoute of routes.dynamic_route_configs) {
-			retval.push(dynamicRoute.route_config.name);
+		if (routes.dynamic_route_configs) {
+			for (var dynamicRoute of routes.dynamic_route_configs) {
+				retval.push(dynamicRoute.route_config.name);
+			}
 		}
 	}
 	return retval;
@@ -212,6 +214,7 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 	// console.log(JSON.stringify(listener));
 	console.log("Listener: " + listener.name);
 
+	var trafficExpected = true;
 	for (var filterChain of listener.filter_chains) {
 
 		for (var filter of filterChain.filters) {
@@ -229,11 +232,17 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 				}
 			} else if (filter.name == "mixer") {
 				// Ignore filter.config for mixer filters
+				console.log("  Uses Istio Mixer");
 			} else if (filter.name == "envoy.tcp_proxy") {
 				console.log("  TCP target cluster: '" + filter.config.cluster + "'");
 				outClusters.push(filter.config.cluster);
+			} else if (filter.name == "envoy.filters.network.sni_cluster") {
+				console.log("  Multicluster: Uses SNI name as cluster name");
+				trafficExpected = false;
+			} else if (filter.name == "envoy.filters.network.tcp_cluster_rewrite") {
+				console.log("  Multicluster: Rewrites '" + filter.config.cluster_pattern + "' to '" + filter.config.cluster_replacement + "'");
 			} else {
-				console.log("  Filter name: " + filter.name + " has keys " + Object.keys(filter));
+				console.log("  UNSUPPORT DUMP for filter type name: " + filter.name + " which has keys " + Object.keys(filter));
 			}
 		}
 
@@ -267,7 +276,9 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 			console.log("  SSL connection errors: " + stats.listener[listener.name].ssl.connection_error);
 		}
 	} else {
-		console.log("  WARNING: No SSL or HTTP traffic stats");
+		if (trafficExpected) {
+			console.log("  WARNING: No SSL or HTTP traffic stats");
+		}
 	}
 }
 
@@ -410,9 +421,11 @@ function processEnvoy(configDump, stats, certs) {
 		} else {
 			console.log("WARNING: No static_route_configs");
 		}
-		for (var dynamicRoute of configDump.configs.routes.dynamic_route_configs) {
-			if (referencedRoutes.indexOf(dynamicRoute.route_config.name) >= 0) {
-				printRoute(dynamicRoute.route_config, stats, referencedClusters);
+		if (configDump.configs.routes.dynamic_route_configs) {
+			for (var dynamicRoute of configDump.configs.routes.dynamic_route_configs) {
+				if (referencedRoutes.indexOf(dynamicRoute.route_config.name) >= 0) {
+					printRoute(dynamicRoute.route_config, stats, referencedClusters);
+				}
 			}
 		}
 	}

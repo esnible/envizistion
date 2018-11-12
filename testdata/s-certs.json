@@ -1,0 +1,92 @@
+{
+ "certificates": [
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "1a27d32091b5ebe204ee19122dc9e255",
+     "subject_alt_names": [],
+     "days_until_expiration": "99"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "b42595d9fb6616c902ed8f2c4249a129",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "89"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "1a27d32091b5ebe204ee19122dc9e255",
+     "subject_alt_names": [],
+     "days_until_expiration": "99"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "b42595d9fb6616c902ed8f2c4249a129",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "89"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "1a27d32091b5ebe204ee19122dc9e255",
+     "subject_alt_names": [],
+     "days_until_expiration": "99"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "b42595d9fb6616c902ed8f2c4249a129",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "89"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "1a27d32091b5ebe204ee19122dc9e255",
+     "subject_alt_names": [],
+     "days_until_expiration": "99"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "b42595d9fb6616c902ed8f2c4249a129",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "89"
+    }
+   ]
+  }
+ ]
+}
