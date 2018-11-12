@@ -10,6 +10,7 @@ fi
 
 POD=$1
 
+echo PodCheck for $POD
 node $SCRIPTPATH/cli.js \
 	<(kubectl exec $POD -c istio-proxy -- curl --silent localhost:15000/config_dump) \
 	<(kubectl exec $POD -c istio-proxy -- curl --silent localhost:15000/stats) \
