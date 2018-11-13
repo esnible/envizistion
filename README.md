@@ -21,3 +21,5 @@ have not defined any Gateways and VirtualServices.
 # Developer
 
 Test offline by downloading pod:15000/config_dump, /stats, and /certs and running `node cli.js <config_dump> <stats> <certs>`.  For example `node ./cli.js testdata/pp-config_dump.json testdata/pp-stats.txt testdata/pp-certs.json`
+
+Before pushing run _testdata/testcases.sh_.  If it concludes with "Tests pass" then the code is probably OK.

@@ -315,7 +315,12 @@ function printRoute(routeConfig, stats, outClusters) {
 					printedDomains = true;
 				}
 				console.log("    " + JSON.stringify(route.match) + " => " + route.route.cluster);
+				if (route.route.host_rewrite) {
+					console.log("      (rewritten " + route.route.host_rewrite + ")");
+				}
 				outClusters.push(route.route.cluster);
+			} else {
+				// console.log("    Skipping " + route.route.cluster);
 			}
 		}
 	}
