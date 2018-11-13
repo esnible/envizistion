@@ -264,11 +264,9 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 		} else {
 			console.log("  Warning no successful HTTP");
 		}
-		if (stats.listener[listener.name].http[listener.name].downstream_rq_4xx > 0) {
-			console.log("  4xx ERRORS " + stats.listener[listener.name].http[listener.name].downstream_rq_4xx);
-		}
-		if (stats.listener[listener.name].http[listener.name].downstream_rq_5xx > 0) {
-			console.log("  5xx ERRORS " + stats.listener[listener.name].http[listener.name].downstream_rq_5xx);
+		if (stats.listener[listener.name].http[listener.name].downstream_rq_4xx > 0
+				|| stats.listener[listener.name].http[listener.name].downstream_rq_5xx > 0) {
+			console.log("  ERRORS " + renderBreakdown(stats.listener[listener.name].http[listener.name], /downstream_rq_([45]..)/));
 		}
 	} else if (stats.listener[listener.name].ssl) {
 		console.log("  SSL handshakes: " + stats.listener[listener.name].ssl.handshake);
@@ -280,6 +278,18 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 			console.log("  WARNING: No SSL or HTTP traffic stats");
 		}
 	}
+}
+
+// renderBreakdown returns a human-readable string for the properties of h that match regex
+function renderBreakdown(h, regex) {
+	var retval = [];
+	for (var keyval of Object.entries(h)) {
+		var match = keyval[0].match(regex);
+		if (match && match[1]) {
+			retval.push([match[1], keyval[1]]);
+		}
+	}
+	return retval.map(function(keyval) { return keyval[0] + ": " + keyval[1]; }).join(", ");
 }
 
 function printRoute(routeConfig, stats, outClusters) {
@@ -341,11 +351,9 @@ function printCluster(cluster, stats, certs) {
 	} else if (cluster.name.startsWith('inbound|')) {
 		console.log("  WARNING No successful HTTP traffic");
 	}
-	if (stats.cluster[cluster.name].upstream_rq_4xx > 0) {
-		console.log("  4xx ERRORS " + stats.cluster[cluster.name].upstream_rq_4xx);
-	}
-	if (stats.cluster[cluster.name].upstream_rq_5xx > 0) {
-		console.log("  5xx ERRORS " + stats.cluster[cluster.name].upstream_rq_5xx);
+	if (stats.cluster[cluster.name].upstream_rq_4xx > 0
+			|| stats.cluster[cluster.name].upstream_rq_5xx > 0) {
+		console.log("  ERRORS " + renderBreakdown(stats.cluster[cluster.name], /upstream_rq_([45][0-9][0-9])/));
 	}
 }
 
