@@ -190,8 +190,8 @@ function clusterHasTraffic(cluster, stats) {
 	}
 	return clusterStats.upstream_rq_2xx > 0
 		|| clusterStats.upstream_rq_4xx > 0
-		|| clusterStats.upstream_rq_5xx > 0;
-		// TODO || with local.ssl.connection_error or other errors if possible/needed
+		|| clusterStats.upstream_rq_5xx > 0
+		|| clusterStats.upstream_cx_connect_fail > 0;
 }
 
 function listenerHasTraffic(listener, stats) {
@@ -326,7 +326,7 @@ function printRoute(routeConfig, stats, outClusters) {
 	}
 
 	if (clustersDisplayed == 0) {
-		console.log("  Warning: None of the " + routeConfig.virtual_hosts.length + " known routes has traffic stats");
+		console.log("  Warning: None of the " + routeConfig.virtual_hosts.length + " known virtual hosts has traffic stats");
 	}
 }
 
@@ -359,6 +359,9 @@ function printCluster(cluster, stats, certs) {
 	if (stats.cluster[cluster.name].upstream_rq_4xx > 0
 			|| stats.cluster[cluster.name].upstream_rq_5xx > 0) {
 		console.log("  ERRORS " + renderBreakdown(stats.cluster[cluster.name], /upstream_rq_([45][0-9][0-9])/));
+	}
+	if (stats.cluster[cluster.name].upstream_cx_connect_fail > 0) {
+		console.log("  CONNECTION FAILURES " + stats.cluster[cluster.name].upstream_cx_connect_fail);
 	}
 }
 
@@ -409,18 +412,29 @@ function processEnvoy11(configDump, rawStats, certs) {
 function processEnvoy(configDump, stats, certs) {
 	console.log("Listeners:");
 	var listenersWithTraffic = 0;
+	var inboundListeners = 0;
 	var referencedRoutes = [];
 	var referencedClusters = [];
 	if (configDump.configs.listeners && configDump.configs.listeners.dynamic_active_listeners) {
 		for (var activeListener of configDump.configs.listeners.dynamic_active_listeners) {
-			if (listenerHasTraffic(activeListener.listener.name, stats) || inboundListener(activeListener.listener)) {
+			var printed = false;
+			if (listenerHasTraffic(activeListener.listener.name, stats)) {
 				printListener(activeListener.listener, stats, certs, referencedRoutes, referencedClusters);
+				printed = true;
 				listenersWithTraffic++;
+			}
+			if (inboundListener(activeListener.listener)) {
+				if (!printed) {
+					printListener(activeListener.listener, stats, certs, referencedRoutes, referencedClusters);
+				}
+				inboundListeners++;
 			}
 		}
 	}
-	if (listenersWithTraffic == 0) {
-		console.log("WARNING: No listeners");
+	if (inboundListeners == 0) {
+		console.log("WARNING: No inbound cluster (no K8s Service matches the pod; or no Istio control plane connectivity");
+	} else if (listenersWithTraffic == 0) {
+		console.log("WARNING: No traffic");
 	}
 	console.log();
 
