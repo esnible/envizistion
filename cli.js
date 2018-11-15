@@ -214,6 +214,12 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 	// console.log(JSON.stringify(listener));
 	console.log("Listener: " + listener.name);
 
+	if (listener.listener_filters) {
+		// This is typically the envoy.listener.tls_inspector
+		// See https://www.envoyproxy.io/docs/envoy/latest/configuration/listener_filters/tls_inspector#config-listener-filters-tls-inspector
+		console.log("  Filters: " + listener.listener_filters.map(function(lf) { return lf.name; }).join(", "));
+	}
+
 	var trafficExpected = true;
 	for (var filterChain of listener.filter_chains) {
 
@@ -409,7 +415,15 @@ function processEnvoy11(configDump, rawStats, certs) {
 	processEnvoy(configDump10, processStatsData(rawStats, escapes), certs);
 }
 
+function printBootstrap(bootstrap) {
+	console.log("Istio version: " + bootstrap.bootstrap.node.metadata.ISTIO_VERSION);
+	console.log("Envoy version: " + bootstrap.bootstrap.node.build_version);
+	console.log();
+}
+
 function processEnvoy(configDump, stats, certs) {
+	printBootstrap(configDump.configs.bootstrap);
+
 	console.log("Listeners:");
 	var listenersWithTraffic = 0;
 	var inboundListeners = 0;
