@@ -1,0 +1,25 @@
+
+.problem {
+  color: red;
+}
+
+.warning {
+  color: gold;
+}
+
+.envoy {
+  font-style: italic;
+  padding: 4px 6px;
+}
+
+.listener {
+  /*background-color: lightgrey;*/
+}
+
+.route {
+  /*background-color: lightgrey;*/
+}
+
+.cluster {
+  /*background-color: lightgrey;*/
+}
