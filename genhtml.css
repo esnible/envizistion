@@ -14,14 +14,22 @@
 
 .listener {
   background-color: lightgrey;
+  margin: 5px;
 	/*border-style: solid;*/
 	/*border: 1px solid green;*/
 }
 
 .route {
   background-color: lightcyan;
+  margin: 5px;
+}
+
+.route-route {
+  background-color: lightblue;
+  margin: 5px;
 }
 
 .cluster {
   background-color: lavender;
+  margin: 5px;
 }

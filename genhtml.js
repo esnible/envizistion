@@ -201,13 +201,18 @@ function listenerHasTraffic(listener, stats) {
 	return stats.listener[listener].downstream_cx_total > 0;
 }
 
-function htmlCert(label, filename, certs) {
+function htmlCert(label, filename, certs, importantDays) {
 	if (!(filename in certs)) {
 		console.log("  <span class='problem'><b>Warning unknown cert " + filename + ", names are " + Object.keys(certs) + "</b></span><br>");
 		return;
 	}
 	console.log("  " + label + " <i>" + filename.split('/').slice(-1)[0] + "</i> " +
-	  certs[filename].serial + " (days until expiration: " + certs[filename].daysLeft + ")<br>");
+			  certs[filename].serial + "</i><br>");
+	if (certs[filename].daysLeft < 0) {
+		console.log("  <span class='problem'><b>EXPIRED</b></span><br>");
+	} else if (certs[filename].daysLeft < importantDays) {
+		console.log("  <span class='warning'>(days until expiration: " + certs[filename].daysLeft + ")</span><br>");
+	}
 }
 
 function htmlListener(listener, stats, certs) {
@@ -243,11 +248,11 @@ function htmlListener(listener, stats, certs) {
 		}
 
 		if (filterChain.tls_context) {
-			htmlCert("CA", filterChain.tls_context.common_tls_context.validation_context.trusted_ca.filename, certs);
+			htmlCert("CA", filterChain.tls_context.common_tls_context.validation_context.trusted_ca.filename, certs, 10);
 			// console.log("  CA filename " + filterChain.tls_context.common_tls_context.validation_context.trusted_ca.filename);
 			// console.log("  filterChain[i].tls_context.common_tls_context.validation_context.trusted_ca has keys " + Object.keys(filterChain.tls_context.common_tls_context.validation_context.trusted_ca));
 			for (var tlsCertificate of filterChain.tls_context.common_tls_context.tls_certificates) {
-				htmlCert("chain", tlsCertificate.certificate_chain.filename, certs);
+				htmlCert("chain", tlsCertificate.certificate_chain.filename, certs, 0);
 				// console.log("  Cert Chain filename " + tlsCertificate.certificate_chain.filename);
 				// console.log("  filterChain[i].tls_context.common_tls_context.tls_certificates[j].certificate_chain has keys " + Object.keys(tlsCertificate.certificate_chain));
 			}
@@ -316,11 +321,12 @@ function htmlRoute(routeConfig, stats) {
 
 					printedDomains = true;
 				}
+				console.log("<div class='route-route'>");
 				console.log("    " + htmlMatch(route.match) + " => " + route.route.cluster + "<br>");
 				if (route.route.host_rewrite) {
 					console.log("      (rewritten " + route.route.host_rewrite + ")<br>");
 				}
-				console.log("<br>");
+				console.log("</div>");
 			} else {
 				// console.log("    Skipping " + route.route.cluster);
 			}
@@ -342,14 +348,16 @@ function htmlCluster(cluster, stats, certs) {
 				console.log("  => " + host.socket_address.address + ":" + host.socket_address.port_value + "<br>");
 		    }
 		}
+	} else {
+		console.log("  => " + cluster.type + "<br>");
 	}
 
 	if (cluster.tls_context) {
-		htmlCert("CA", cluster.tls_context.common_tls_context.validation_context.trusted_ca.filename, certs);
+		htmlCert("CA", cluster.tls_context.common_tls_context.validation_context.trusted_ca.filename, certs, 10);
 		// console.log("  CA filename " + filterChain.tls_context.common_tls_context.validation_context.trusted_ca.filename);
 		// console.log("  filterChain[i].tls_context.common_tls_context.validation_context.trusted_ca has keys " + Object.keys(filterChain.tls_context.common_tls_context.validation_context.trusted_ca));
 		for (var tlsCertificate of cluster.tls_context.common_tls_context.tls_certificates) {
-			htmlCert("chain", tlsCertificate.certificate_chain.filename, certs);
+			htmlCert("chain", tlsCertificate.certificate_chain.filename, certs, 0);
 			// console.log("  Cert Chain filename " + tlsCertificate.certificate_chain.filename);
 			// console.log("  filterChain[i].tls_context.common_tls_context.tls_certificates[j].certificate_chain has keys " + Object.keys(tlsCertificate.certificate_chain));
 		}

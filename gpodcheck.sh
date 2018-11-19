@@ -10,7 +10,7 @@ fi
 
 POD=$1
 
-echo Graphical PodCheck for $POD >2
+>&2 echo Graphical PodCheck for $POD
 node $SCRIPTPATH/genhtml.js \
 	<(kubectl exec $POD -c istio-proxy -- curl --silent localhost:15000/config_dump) \
 	<(kubectl exec $POD -c istio-proxy -- curl --silent localhost:15000/stats) \
