@@ -4,7 +4,7 @@
 }
 
 .warning {
-  color: gold;
+  color: darkorange;
 }
 
 .envoy {
@@ -13,13 +13,15 @@
 }
 
 .listener {
-  /*background-color: lightgrey;*/
+  background-color: lightgrey;
+	/*border-style: solid;*/
+	/*border: 1px solid green;*/
 }
 
 .route {
-  /*background-color: lightgrey;*/
+  background-color: lightcyan;
 }
 
 .cluster {
-  /*background-color: lightgrey;*/
+  background-color: lavender;
 }

@@ -211,7 +211,7 @@ function htmlCert(label, filename, certs) {
 }
 
 function htmlListener(listener, stats, certs) {
-	console.log("<span class='listener'>");
+	console.log("<div class='listener'>");
 	// console.log(JSON.stringify(listener));
 	console.log("<b>" + listener.name + "</b><br>");
 
@@ -274,7 +274,7 @@ function htmlListener(listener, stats, certs) {
 			console.log("  <span class='warning'>WARNING: No SSL or HTTP traffic stats</span><br>");
 		}
 	}
-	console.log("</span>");
+	console.log("</div>");
 }
 
 // renderBreakdown returns a human-readable string for the properties of h that match regex
@@ -297,7 +297,7 @@ function htmlRoute(routeConfig, stats) {
 	if (!routeConfig.name) {
 		return; // Ignore "virtualHost" style route
 	}
-	console.log("<span class='route'>");
+	console.log("<div class='route'>");
 	console.log("<b>" + routeConfig.name + "</b><br>");
 	var clustersDisplayed = 0;
 	for (var virtualHost of routeConfig.virtual_hosts) {
@@ -330,11 +330,11 @@ function htmlRoute(routeConfig, stats) {
 	if (clustersDisplayed == 0) {
 		console.log("  <span class='warning'>Warning: None of the " + routeConfig.virtual_hosts.length + " known virtual hosts has traffic stats</span><br>");
 	}
-	console.log("</span>");
+	console.log("</div>");
 }
 
 function htmlCluster(cluster, stats, certs) {
-	console.log("<span class='cluster'>");
+	console.log("<div class='cluster'>");
 	console.log("<b>" + cluster.name + "</b><br>");
 	if (cluster.hosts) {
 		for (var host of cluster.hosts) {
@@ -367,7 +367,7 @@ function htmlCluster(cluster, stats, certs) {
 	if (stats.cluster[cluster.name].upstream_cx_connect_fail > 0) {
 		console.log("<span class='problem'>CONNECTION FAILURES " + stats.cluster[cluster.name].upstream_cx_connect_fail + "</problem><br>");
 	}
-	console.log("</span>");
+	console.log("</div>");
 }
 
 function inboundListener(listener) {
@@ -528,7 +528,7 @@ function genHtml(configDump, stats, certs) {
 
 	htmlBootstrap(configDump.configs.bootstrap);
 	
-	console.log("<p><table border='1'>")
+	console.log("<p><table border=1 frame=hsides rules=rows>")
 	console.log("<tr><th align='center'>Listeners</th><th align='center'>Routes</th><th align='center'>Clusters</th></tr>");
 
 	// Listeners we will show on the screen
@@ -547,10 +547,11 @@ function genHtml(configDump, stats, certs) {
 	// var referencedClusters = [];
 	var allRoutes = routesByName(configDump);
 	var allClusters = clustersByName(configDump);
+	var clustersShown = [];
 
 	for (var listener of visibleListeners) {
 
-		console.log('<tr><td>');
+		console.log('<tr><td valign="middle">');
 		htmlListener(listener, stats, certs);
 		if (listenerHasTraffic(listener.name, stats)) {
 			listenersWithTraffic++;
@@ -559,7 +560,7 @@ function genHtml(configDump, stats, certs) {
 			inboundListeners++;
 		}
 
-		console.log("</td><td>");
+		console.log('</td><td valign="middle">');
 
 		var routes = referencedRoutes(listener);
 		for (var routeName of routes) {
@@ -572,7 +573,7 @@ function genHtml(configDump, stats, certs) {
 			}
 		}
 
-		console.log("</td><td>");
+		console.log('</td><td valign="middle">');
 
 		var clusters = listenerReferencedClusters(listener);
 		for (var routeName of routes) {
@@ -590,6 +591,7 @@ function genHtml(configDump, stats, certs) {
 			console.log("<p>");
 			if (cluster) {
 				htmlCluster(cluster, stats, certs);
+				clustersShown.push(clusterName);
 			} else {
 				console.log("internal error: cannot find " + clusterName + " in allClusters");
 			}
@@ -597,6 +599,22 @@ function genHtml(configDump, stats, certs) {
 
 		console.log("</td></tr>");
 	}
+
+	// Now show the clusters that aren't attached to a listener
+	console.log('<tr><td valign="middle">');
+	console.log('</td><td valign="middle">');
+	console.log('</td><td valign="middle">');
+
+	for (var clusterName of Object.keys(allClusters)) {
+		if (clustersShown.indexOf(clusterName) < 0 && clusterHasTraffic(clusterName, stats)) {
+			var cluster = allClusters[clusterName];
+			console.log("<p>");
+			htmlCluster(cluster, stats, certs);
+			clustersShown.push(clusterName);
+		}
+	}
+
+	console.log("</td></tr>");
 
 	console.log("</table>")
 
