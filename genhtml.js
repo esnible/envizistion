@@ -182,13 +182,15 @@ function processCertsJson11(rawCerts) {
 	return retval;
 }
 
-function clusterHasTraffic(cluster, stats) {
+function clusterHasTraffic(cluster, stats, outMsgs) {
 	var clusterStats = stats.cluster[cluster];
 	if (!clusterStats) {
-		console.log("<span class='warning'>warning no stats for cluster " + cluster + "</span>"); // happens if no K8s Service references pod
+		// happens if no K8s Service references pod (or subset created after pod?)
+		outMsgs.push("<span class='warning'>warning no stats for cluster " + cluster + "</span><br>");
 		return false; // should never happen, might happen if there is a stats/config mismatch
 	}
 	return clusterStats.upstream_rq_2xx > 0
+		|| clusterStats.upstream_rq_3xx > 0
 		|| clusterStats.upstream_rq_4xx > 0
 		|| clusterStats.upstream_rq_5xx > 0
 		|| clusterStats.upstream_cx_connect_fail > 0;
@@ -349,7 +351,11 @@ function htmlPerFilterConfig(perFilterConfig) {
 	}
 }
 
-function htmlRoute(routeConfig, stats) {
+function unknownCluster(clusterName, allClusters) {
+	return !allClusters[clusterName];
+}
+
+function htmlRoute(routeConfig, stats, allClusters, outMsgs) {
 	if (!routeConfig.name) {
 		return; // Ignore "virtualHost" style route
 	}
@@ -361,7 +367,9 @@ function htmlRoute(routeConfig, stats) {
 		var printedDomains = false;
 		// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-route
 		for (var route of virtualHost.routes) {
-			if (clusterHasTraffic(route.route.cluster, stats) || route.route.cluster.startsWith("inbound|")) {
+			if (clusterHasTraffic(route.route.cluster, stats, outMsgs)
+					|| route.route.cluster.startsWith("inbound|")
+					|| unknownCluster(route.route.cluster, allClusters)) {
 				clustersDisplayed++;
 
 				if (!printedDomains) {
@@ -383,6 +391,10 @@ function htmlRoute(routeConfig, stats) {
 					htmlPerFilterConfig(route.per_filter_config);
 				}
 				console.log("</div>");
+
+				if (unknownCluster(route.route.cluster, allClusters)) {
+					outMsgs.push("<span class='problem'>Route " + routeConfig.name + " refers to non-existent cluster " + route.route.cluster + "</span><br>");
+				}
 			} else {
 				// console.log("    Skipping " + route.route.cluster);
 			}
@@ -423,6 +435,9 @@ function htmlCluster(cluster, stats, certs) {
 		console.log("  Successful HTTP 2xx " + stats.cluster[cluster.name].upstream_rq_2xx + "<br>");
 	} else if (cluster.name.startsWith('inbound|')) {
 		console.log("<span class='warning'>WARNING No successful HTTP traffic</span><br>");
+	}
+	if (stats.cluster[cluster.name].upstream_rq_3xx > 0) {
+		console.log("REDIRECTS " + renderBreakdown(stats.cluster[cluster.name], /upstream_rq_(3[0-9][0-9])/) + "<br>");
 	}
 	if (stats.cluster[cluster.name].upstream_rq_4xx > 0
 			|| stats.cluster[cluster.name].upstream_rq_5xx > 0) {
@@ -566,13 +581,13 @@ function listenerReferencedClusters(listener) {
 	return retval;
 }
 
-function routeReferencedClustersWithTraffic(routeConfig, stats) {
+function routeReferencedClustersWithTraffic(routeConfig, stats, outMsgs) {
 	var retval = [];
 
 	for (var virtualHost of routeConfig.virtual_hosts) {
 		var printedDomains = false;
 		for (var route of virtualHost.routes) {
-			if (clusterHasTraffic(route.route.cluster, stats) || route.route.cluster.startsWith("inbound|")) {
+			if (clusterHasTraffic(route.route.cluster, stats, outMsgs) || route.route.cluster.startsWith("inbound|")) {
 				retval.push(route.route.cluster);
 			}
 		}
@@ -590,6 +605,7 @@ function genHtml(configDump, stats, certs) {
 	console.log("</head>");
 	console.log("<body>");
 
+	var outMsgs = [];
 	htmlBootstrap(configDump.configs.bootstrap);
 	
 	console.log("<p><table border=1 frame=hsides rules=rows>")
@@ -631,7 +647,7 @@ function genHtml(configDump, stats, certs) {
 			var route = allRoutes[routeName];
 			console.log("<p>");
 			if (route) {
-				htmlRoute(route, stats);
+				htmlRoute(route, stats, allClusters, outMsgs);
 			} else {
 				console.log("internal error: no route for " + routeName);
 			}
@@ -643,7 +659,7 @@ function genHtml(configDump, stats, certs) {
 		for (var routeName of routes) {
 			var route = allRoutes[routeName];
 			if (route) {
-				clusters = clusters.concat(routeReferencedClustersWithTraffic(route, stats));
+				clusters = clusters.concat(routeReferencedClustersWithTraffic(route, stats, outMsgs));
 			} else {
 				console.log("internal error: no cluster for " + routeName);
 			}
@@ -681,6 +697,13 @@ function genHtml(configDump, stats, certs) {
 	console.log("</td></tr>");
 
 	console.log("</table>")
+
+	// Uniquify
+	outMsgs = outMsgs.filter(function(val, i, self) { return self.indexOf(val) === i; });
+
+	for (var outMsg of outMsgs) {
+		console.log(outMsg);
+	}
 
 	if (listenersWithTraffic == 0) {
 		console.log("<p><span class='warning'>WARNING: No traffic</span>");
