@@ -294,8 +294,59 @@ function renderBreakdown(h, regex) {
 	return retval.map(function(keyval) { return keyval[0] + ": " + keyval[1]; }).join(", ");
 }
 
+// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-headermatcher
+function htmlMatchHeader(header) {
+	if (header.exact_match) {
+		return header["name"] + "==" + header.exact_match;
+	}
+
+	return JSON.stringify(header);
+}
+
+function htmlMatchKey(key, val) {
+	if (key == "prefix" || key == "path" || key == "regex") {
+		return key + " " + val;
+	} else if (key == "headers") {
+		return "headers " + val.map(function (header) { return htmlMatchHeader(header); }).join("; ");
+	}
+
+	return key + " " + JSON.stringify(val);
+}
+
+// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-routematch
 function htmlMatch(match) {
-	return Object.keys(match).map(function(key) { return key + " " + match[key]; }).join(" && ");
+	return Object.keys(match).map(function(key) { return htmlMatchKey(key, match[key]); }).join(" && ");
+}
+
+function htmlPercent(envoyPct) {
+	// Don't show 100%
+	if (!envoyPct || envoyPct.numerator == 1000000) {
+		return "";
+	}
+
+	return " (" + Math.round(envoyPct.numerator/10000) + "%)";
+}
+
+function htmlEnvoyFault(envoyFault) {
+	for (var faultType of Object.keys(envoyFault)) {
+		if (faultType == "delay") {
+			console.log("DELAY " + envoyFault.delay.fixed_delay + htmlPercent(envoyFault.delay.percentage) + "<br>");
+		} else {
+			console.log("FAULT INJECTION " + faultType + "<br>");
+		}
+	}
+}
+
+function htmlPerFilterConfig(perFilterConfig) {
+	for (var configType of Object.keys(perFilterConfig)) {
+		if (configType == "envoy.fault") {
+			htmlEnvoyFault(perFilterConfig[configType]);
+		} else if (configType == "mixer") {
+			// htmlMixerFilterConfig(perFilterConfig[configType]);
+		} else {
+			console.log(configType + "<br>")
+		}
+	}
 }
 
 function htmlRoute(routeConfig, stats) {
@@ -305,8 +356,10 @@ function htmlRoute(routeConfig, stats) {
 	console.log("<div class='route'>");
 	console.log("<b>" + routeConfig.name + "</b><br>");
 	var clustersDisplayed = 0;
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-virtualhost
 	for (var virtualHost of routeConfig.virtual_hosts) {
 		var printedDomains = false;
+		// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-route
 		for (var route of virtualHost.routes) {
 			if (clusterHasTraffic(route.route.cluster, stats) || route.route.cluster.startsWith("inbound|")) {
 				clustersDisplayed++;
@@ -325,6 +378,9 @@ function htmlRoute(routeConfig, stats) {
 				console.log("    " + htmlMatch(route.match) + " => " + route.route.cluster + "<br>");
 				if (route.route.host_rewrite) {
 					console.log("      (rewritten " + route.route.host_rewrite + ")<br>");
+				}
+				if (route.per_filter_config) {
+					htmlPerFilterConfig(route.per_filter_config);
 				}
 				console.log("</div>");
 			} else {

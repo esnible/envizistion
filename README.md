@@ -2,16 +2,29 @@
 
 Envoy Visualization of Istio Configuration
 
+*Envizistion* attempts to summarize the Envoy configuration in human readable form.
+
+## HTML output
+
+Usage `./gpodcheck.sh <pod> > mark.html && open mark.html`
+
+![Sample output](graphical.png?raw=true "Sample output")
+
+I will try to get the code put into the Istio sidecar because the current output is too hard to search for misconfigurations.
+
+
+## Text output
+
 Usage `./podcheck.sh <pod>`
 
-*Envizistion* attempts to summarize the Envoy configuration in human readable form.  The
-current version merely writes text to standard output.
 
-A future version will generate a picture for the browser.  I will try to get it put into the Istio sidecar because the current output is too hard to search for misconfigurations.
+The
+CLI version merely writes text to standard output.
 
 ## For pods in the istio-system namespace
 
-Usage `./syspodcheck.sh <pod>`
+- Usage `./syspodcheck.sh <pod>`
+- Usage `./gsyspodcheck.sh <pod> > mark.html && open mark.html`
 
 You should be able to check the Ingress and Egress Gateways.
 
