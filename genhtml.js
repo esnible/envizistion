@@ -56,7 +56,15 @@ function escapesFromListeners(listeners) {
 	var retval = [];
 	if (listeners && listeners.dynamic_active_listeners) {
 		for (var activeListener of listeners.dynamic_active_listeners) {
-			retval.push(activeListener.listener.name);
+			if (activeListener.listener.name) {
+				retval.push(activeListener.listener.name);
+			}
+			if (statPrefixTcp(activeListener.listener)) {
+				retval.push(statPrefixTcp(activeListener.listener));
+			}
+			if (statPrefixHttp(activeListener.listener)) {
+				retval.push(statPrefixHttp(activeListener.listener));
+			}
 		}
 	}
 	return retval;
@@ -198,15 +206,56 @@ function clusterHasTraffic(cluster, stats, outMsgs) {
 		|| clusterStats.upstream_cx_connect_fail > 0;
 }
 
-function listenerHasTraffic(listener, stats) {
-	if (!stats.listener || !(listener in stats.listener)) { // e.g. "virtual"
-		// (but not, e.g., http.15011 stats as seen on Pilot
-		if (stats.http && listener in stats.http) {
-			return stats.http[listener].downstream_cx_total > 0;
+function statPrefixHttp(listener) {
+	for (var filterChain of listener.filter_chains) {
+		for (var filter of filterChain.filters) {
+			if (filter.name == "envoy.http_connection_manager") {
+				return filter.config.stat_prefix;
+			}
 		}
-		return false;
 	}
-	return stats.listener[listener].downstream_cx_total > 0;
+
+	return null;
+}
+
+function statPrefixHttp(listener) {
+	for (var filterChain of listener.filter_chains) {
+		for (var filter of filterChain.filters) {
+			if (filter.name == "envoy.http_connection_manager") {
+				return filter.config.stat_prefix;
+			}
+		}
+	}
+
+	return null;
+}
+
+function statPrefixTcp(listener) {
+	for (var filterChain of listener.filter_chains) {
+		for (var filter of filterChain.filters) {
+			if (filter.name == "envoy.tcp_proxy") {
+				return filter.config.stat_prefix;
+			}
+		}
+	}
+
+	return null;
+}
+
+function statsForListener(listener, stats) {
+	var tcpPrefix = statPrefixTcp(listener);
+	if (tcpPrefix && stats.tcp[tcpPrefix]) {
+		return stats.tcp[tcpPrefix];
+	}
+	var httpPrefix = statPrefixHttp(listener);
+	if (httpPrefix && stats.http[httpPrefix]) {
+		return stats.http[httpPrefix];
+	}
+	return {};
+}
+
+function listenerHasTraffic(listener, stats) {
+	return statsForListener(listener, stats).downstream_cx_total > 0;
 }
 
 function htmlCert(label, filename, certs, importantDays) {
@@ -267,24 +316,16 @@ function htmlListener(listener, stats, certs) {
 		}
 	}
 
-	// TODO Replace this ad-hoc logic with parsing of `stat_prefix` in config dump.
-	var listenerHttp;
-	if (stats.http[listener.name]) {
-		listenerHttp = stats.http[listener.name];
-	} else if (stats.listener[listener.name] &&
-			stats.listener[listener.name].http &&
-			stats.listener[listener.name].http[listener.name]) {
-		listenerHttp = stats.listener[listener.name].http;
-	}
-	if (listenerHttp) {
-		if (listenerHttp.downstream_rq_2xx > 0) {
-			console.log("  Successful HTTP 2xx " + listenerHttp.downstream_rq_2xx + "<br>");
+	var listenerStats = statsForListener(listener, stats);
+	if (listenerStats) {
+		if (listenerStats.downstream_rq_2xx > 0) {
+			console.log("  Successful HTTP 2xx " + listenerStats.downstream_rq_2xx + "<br>");
 		} else {
 			console.log("  <span class='warning'>Warning no successful HTTP</span><br>");
 		}
-		if (listenerHttp.downstream_rq_4xx > 0
-				|| listenerHttp.downstream_rq_5xx > 0) {
-			console.log("<span class='problem'>ERRORS " + renderBreakdown(listenerHttp, /downstream_rq_([45]..)/) + "</span><br>");
+		if (listenerStats.downstream_rq_4xx > 0
+				|| listenerStats.downstream_rq_5xx > 0) {
+			console.log("<span class='problem'>ERRORS " + renderBreakdown(listenerStats, /downstream_rq_([45]..)/) + "</span><br>");
 		}
 	}
 
@@ -293,7 +334,7 @@ function htmlListener(listener, stats, certs) {
 		if (stats.listener[listener.name].ssl.connection_error) {
 			console.log("<span class='problem'>SSL connection errors: " + stats.listener[listener.name].ssl.connection_error + "</span><br>");
 		}
-	} else if (!listenerHttp && trafficExpected) {
+	} else if (!listenerStats && trafficExpected) {
 		console.log("  <span class='warning'>WARNING: No SSL or HTTP traffic stats</span><br>");
 	}
 	console.log("</div>");
@@ -535,6 +576,10 @@ function routesByName(configDump) {
 	if (configDump.configs.routes) {
 		if (configDump.configs.routes.static_route_configs) {
 			for (var staticRoute of configDump.configs.routes.static_route_configs) {
+				if (!staticRoute.route_config.name) {
+					// Hack - give name to unnamed routes TODO fix
+					staticRoute.route_config.name = staticRoute.route_config.virtual_hosts[0].name;
+				}
 				retval[staticRoute.route_config.name] = staticRoute.route_config;
 			}
 		}
@@ -565,7 +610,7 @@ function clustersByName(configDump) {
 }
 
 function showListenerp(listener, stats) {
-	return listenerHasTraffic(listener.name, stats) || inboundListener(listener);
+	return listenerHasTraffic(listener, stats) || inboundListener(listener);
 }
 
 function referencedRoutes(listener) {
@@ -575,6 +620,10 @@ function referencedRoutes(listener) {
 		for (var filter of filterChain.filters) {
 			if (filter.name == "envoy.http_connection_manager") {
 				if (filter.config.route_config) {
+					if (!filter.config.route_config.name) {
+						// Hack - give name to unnamed routes TODO fix
+						filter.config.route_config.name = filter.config.route_config.virtual_hosts[0].name;
+					}
 					if (retval.indexOf(filter.config.route_config.name) < 0) {
 						retval.push(filter.config.route_config.name);
 					}
@@ -639,6 +688,12 @@ function genHtml(configDump, stats, certs) {
 	var listenerRows = {};
 	var visibleListeners = [];
 	for (var listener of allListeners(configDump)) {
+		if (!listener.name) {
+			if (listener.address && listener.address.socket_address) {
+				// Hack; give name to anonymous listeners (as seen on the Egress) TODO fix
+				listener.name = listener.address.socket_address.address + "_" + listener.address.socket_address.port_value;
+			}
+		}
 		if (showListenerp(listener, stats)) {
 			listenerRows[listener.name] = visibleListeners.length;
 			visibleListeners.push(listener);
@@ -657,7 +712,7 @@ function genHtml(configDump, stats, certs) {
 
 		console.log('<tr><td valign="middle">');
 		htmlListener(listener, stats, certs);
-		if (listenerHasTraffic(listener.name, stats)) {
+		if (listenerHasTraffic(listener, stats)) {
 			listenersWithTraffic++;
 		}
 		if (inboundListener(listener)) {

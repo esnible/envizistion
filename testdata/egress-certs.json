@@ -1,0 +1,82 @@
+{
+ "certificates": [
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "8e2582c21cfb8a7926cf81a6a6e8de26",
+     "subject_alt_names": [],
+     "days_until_expiration": "98",
+     "valid_from": "2018-11-20T15:24:05Z",
+     "expiration_time": "2019-02-28T15:24:05Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "34da177d8770ddae2dcbd9692b9cea2f",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/istio-system/sa/istio-egressgateway-service-account"
+      }
+     ],
+     "days_until_expiration": "88",
+     "valid_from": "2018-11-20T15:24:54Z",
+     "expiration_time": "2019-02-18T15:24:54Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "8e2582c21cfb8a7926cf81a6a6e8de26",
+     "subject_alt_names": [],
+     "days_until_expiration": "98",
+     "valid_from": "2018-11-20T15:24:05Z",
+     "expiration_time": "2019-02-28T15:24:05Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "34da177d8770ddae2dcbd9692b9cea2f",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/istio-system/sa/istio-egressgateway-service-account"
+      }
+     ],
+     "days_until_expiration": "88",
+     "valid_from": "2018-11-20T15:24:54Z",
+     "expiration_time": "2019-02-18T15:24:54Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "8e2582c21cfb8a7926cf81a6a6e8de26",
+     "subject_alt_names": [],
+     "days_until_expiration": "98",
+     "valid_from": "2018-11-20T15:24:05Z",
+     "expiration_time": "2019-02-28T15:24:05Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "34da177d8770ddae2dcbd9692b9cea2f",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/istio-system/sa/istio-egressgateway-service-account"
+      }
+     ],
+     "days_until_expiration": "88",
+     "valid_from": "2018-11-20T15:24:54Z",
+     "expiration_time": "2019-02-18T15:24:54Z"
+    }
+   ]
+  }
+ ]
+}
