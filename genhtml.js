@@ -89,8 +89,10 @@ function escapesFromClusters(clusters) {
 		for (var staticCluster of clusters.static_clusters) {
 			retval.push(staticCluster.cluster.name);
 		}
-		for (var dynamicCluster of clusters.dynamic_active_clusters) {
-			retval.push(dynamicCluster.cluster.name);
+		if (clusters.dynamic_active_clusters) {
+			for (var dynamicCluster of clusters.dynamic_active_clusters) {
+				retval.push(dynamicCluster.cluster.name);
+			}
 		}
 	}
 	return retval;
@@ -198,6 +200,10 @@ function clusterHasTraffic(cluster, stats, outMsgs) {
 
 function listenerHasTraffic(listener, stats) {
 	if (!stats.listener || !(listener in stats.listener)) { // e.g. "virtual"
+		// (but not, e.g., http.15011 stats as seen on Pilot
+		if (stats.http && listener in stats.http) {
+			return stats.http[listener].downstream_cx_total > 0;
+		}
 		return false;
 	}
 	return stats.listener[listener].downstream_cx_total > 0;
@@ -261,25 +267,34 @@ function htmlListener(listener, stats, certs) {
 		}
 	}
 
-	if (stats.listener[listener.name].http) {
-		if (stats.listener[listener.name].http[listener.name].downstream_rq_2xx > 0) {
-			console.log("  Successful HTTP 2xx " + stats.listener[listener.name].http[listener.name].downstream_rq_2xx + "<br>");
+	// TODO Replace this ad-hoc logic with parsing of `stat_prefix` in config dump.
+	var listenerHttp;
+	if (stats.http[listener.name]) {
+		listenerHttp = stats.http[listener.name];
+	} else if (stats.listener[listener.name] &&
+			stats.listener[listener.name].http &&
+			stats.listener[listener.name].http[listener.name]) {
+		listenerHttp = stats.listener[listener.name].http;
+	}
+	if (listenerHttp) {
+		if (listenerHttp.downstream_rq_2xx > 0) {
+			console.log("  Successful HTTP 2xx " + listenerHttp.downstream_rq_2xx + "<br>");
 		} else {
 			console.log("  <span class='warning'>Warning no successful HTTP</span><br>");
 		}
-		if (stats.listener[listener.name].http[listener.name].downstream_rq_4xx > 0
-				|| stats.listener[listener.name].http[listener.name].downstream_rq_5xx > 0) {
-			console.log("<span class='problem'>ERRORS " + renderBreakdown(stats.listener[listener.name].http[listener.name], /downstream_rq_([45]..)/) + "</span><br>");
+		if (listenerHttp.downstream_rq_4xx > 0
+				|| listenerHttp.downstream_rq_5xx > 0) {
+			console.log("<span class='problem'>ERRORS " + renderBreakdown(listenerHttp, /downstream_rq_([45]..)/) + "</span><br>");
 		}
-	} else if (stats.listener[listener.name].ssl) {
+	}
+
+	if (stats.listener[listener.name] && stats.listener[listener.name].ssl) {
 		console.log("  SSL handshakes: " + stats.listener[listener.name].ssl.handshake + "<br>");
 		if (stats.listener[listener.name].ssl.connection_error) {
 			console.log("<span class='problem'>SSL connection errors: " + stats.listener[listener.name].ssl.connection_error + "</span><br>");
 		}
-	} else {
-		if (trafficExpected) {
-			console.log("  <span class='warning'>WARNING: No SSL or HTTP traffic stats</span><br>");
-		}
+	} else if (!listenerHttp && trafficExpected) {
+		console.log("  <span class='warning'>WARNING: No SSL or HTTP traffic stats</span><br>");
 	}
 	console.log("</div>");
 }
@@ -492,18 +507,27 @@ function processEnvoy11(configDump, rawStats, certs) {
 }
 
 function htmlBootstrap(bootstrap) {
-	console.log('<span class="envoy">Istio version: ' + bootstrap.bootstrap.node.metadata.ISTIO_VERSION + "</span><br>");
+	if (bootstrap.bootstrap.node.metadata) {
+		console.log('<span class="envoy">Istio version: ' + bootstrap.bootstrap.node.metadata.ISTIO_VERSION + "</span><br>");
+	}
 	console.log("<span class='envoy'>Envoy version: " + bootstrap.bootstrap.node.build_version + "</span><br>");
 	console.log();
 }
 
 function allListeners(configDump) {
-	if (configDump.configs.listeners && configDump.configs.listeners.dynamic_active_listeners) {
-		return configDump.configs.listeners.dynamic_active_listeners
-			.map(function(l) { return l.listener; });
+	var retval = [];
+	if (configDump.configs.listeners) {
+		if (configDump.configs.listeners.dynamic_active_listeners) {
+			retval = retval.concat(configDump.configs.listeners.dynamic_active_listeners
+					.map(function(l) { return l.listener; }));
+		}
+		if (configDump.configs.listeners.static_listeners) {
+			retval = retval.concat(configDump.configs.listeners.static_listeners
+					.map(function(l) { return l.listener; }));
+		}
 	}
 
-	return [];
+	return retval;
 }
 
 function routesByName(configDump) {
@@ -607,7 +631,7 @@ function genHtml(configDump, stats, certs) {
 
 	var outMsgs = [];
 	htmlBootstrap(configDump.configs.bootstrap);
-	
+
 	console.log("<p><table border=1 frame=hsides rules=rows>")
 	console.log("<tr><th align='center'>Listeners</th><th align='center'>Routes</th><th align='center'>Clusters</th></tr>");
 
@@ -665,7 +689,7 @@ function genHtml(configDump, stats, certs) {
 			}
 		}
 		clusters = Array.from(new Set(clusters));
-		
+
 		for (var clusterName of clusters) {
 			var cluster = allClusters[clusterName];
 			console.log("<p>");

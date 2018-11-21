@@ -89,8 +89,10 @@ function escapesFromClusters(clusters) {
 		for (var staticCluster of clusters.static_clusters) {
 			retval.push(staticCluster.cluster.name);
 		}
-		for (var dynamicCluster of clusters.dynamic_active_clusters) {
-			retval.push(dynamicCluster.cluster.name);
+		if (clusters.dynamic_active_clusters) {
+			for (var dynamicCluster of clusters.dynamic_active_clusters) {
+				retval.push(dynamicCluster.cluster.name);
+			}
 		}
 	}
 	return retval;
@@ -264,25 +266,35 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 		}
 	}
 
-	if (stats.listener[listener.name].http) {
-		if (stats.listener[listener.name].http[listener.name].downstream_rq_2xx > 0) {
-			console.log("  Successful HTTP 2xx " + stats.listener[listener.name].http[listener.name].downstream_rq_2xx);
+	// TODO Replace this ad-hoc logic with parsing of `stat_prefix` in config dump.
+	var listenerHttp;
+	if (stats.http[listener.name]) {
+		listenerHttp = stats.http[listener.name];
+	} else if (stats.listener[listener.name] &&
+			stats.listener[listener.name].http &&
+			stats.listener[listener.name].http[listener.name]) {
+		listenerHttp = stats.listener[listener.name].http;
+	}
+
+	if (listenerHttp) {
+		if (listenerHttp.downstream_rq_2xx > 0) {
+			console.log("  Successful HTTP 2xx " + listenerHttp.downstream_rq_2xx);
 		} else {
 			console.log("  Warning no successful HTTP");
 		}
-		if (stats.listener[listener.name].http[listener.name].downstream_rq_4xx > 0
-				|| stats.listener[listener.name].http[listener.name].downstream_rq_5xx > 0) {
-			console.log("  ERRORS " + renderBreakdown(stats.listener[listener.name].http[listener.name], /downstream_rq_([45]..)/));
+		if (listenerHttp.downstream_rq_4xx > 0
+				|| listenerHttp.downstream_rq_5xx > 0) {
+			console.log("  ERRORS " + renderBreakdown(listenerHttp, /downstream_rq_([45]..)/));
 		}
-	} else if (stats.listener[listener.name].ssl) {
+	}
+
+	if (stats.listener[listener.name] && stats.listener[listener.name].ssl) {
 		console.log("  SSL handshakes: " + stats.listener[listener.name].ssl.handshake);
 		if (stats.listener[listener.name].ssl.connection_error) {
 			console.log("  SSL connection errors: " + stats.listener[listener.name].ssl.connection_error);
 		}
-	} else {
-		if (trafficExpected) {
-			console.log("  WARNING: No SSL or HTTP traffic stats");
-		}
+	} else if (!listenerHttp && trafficExpected) {
+		console.log("  WARNING: No SSL or HTTP traffic stats");
 	}
 }
 
@@ -416,9 +428,27 @@ function processEnvoy11(configDump, rawStats, certs) {
 }
 
 function printBootstrap(bootstrap) {
-	console.log("Istio version: " + bootstrap.bootstrap.node.metadata.ISTIO_VERSION);
+	if (bootstrap.bootstrap.node.metadata) {
+		console.log("Istio version: " + bootstrap.bootstrap.node.metadata.ISTIO_VERSION);
+	}
 	console.log("Envoy version: " + bootstrap.bootstrap.node.build_version);
 	console.log();
+}
+
+function allListeners(configDump) {
+	var retval = [];
+	if (configDump.configs.listeners) {
+		if (configDump.configs.listeners.dynamic_active_listeners) {
+			retval = retval.concat(configDump.configs.listeners.dynamic_active_listeners
+					.map(function(l) { return l.listener; }));
+		}
+		if (configDump.configs.listeners.static_listeners) {
+			retval = retval.concat(configDump.configs.listeners.static_listeners
+					.map(function(l) { return l.listener; }));
+		}
+	}
+
+	return retval;
 }
 
 function processEnvoy(configDump, stats, certs) {
@@ -429,20 +459,18 @@ function processEnvoy(configDump, stats, certs) {
 	var inboundListeners = 0;
 	var referencedRoutes = [];
 	var referencedClusters = [];
-	if (configDump.configs.listeners && configDump.configs.listeners.dynamic_active_listeners) {
-		for (var activeListener of configDump.configs.listeners.dynamic_active_listeners) {
-			var printed = false;
-			if (listenerHasTraffic(activeListener.listener.name, stats)) {
-				printListener(activeListener.listener, stats, certs, referencedRoutes, referencedClusters);
-				printed = true;
-				listenersWithTraffic++;
+	for (var listener of allListeners(configDump)) {
+		var printed = false;
+		if (listenerHasTraffic(listener.name, stats)) {
+			printListener(listener, stats, certs, referencedRoutes, referencedClusters);
+			printed = true;
+			listenersWithTraffic++;
+		}
+		if (inboundListener(listener)) {
+			if (!printed) {
+				printListener(listener, stats, certs, referencedRoutes, referencedClusters);
 			}
-			if (inboundListener(activeListener.listener)) {
-				if (!printed) {
-					printListener(activeListener.listener, stats, certs, referencedRoutes, referencedClusters);
-				}
-				inboundListeners++;
-			}
+			inboundListeners++;
 		}
 	}
 	if (inboundListeners == 0) {
@@ -477,10 +505,12 @@ function processEnvoy(configDump, stats, certs) {
 		for (var staticCluster of configDump.configs.clusters.static_clusters) {
 			printCluster(staticCluster.cluster, stats, certs);
 		}
-		for (var dynamicCluster of configDump.configs.clusters.dynamic_active_clusters) {
-			if (clusterHasTraffic(dynamicCluster.cluster.name, stats)
-					|| referencedClusters.indexOf(dynamicCluster.cluster.name) >= 0) {
-				printCluster(dynamicCluster.cluster, stats, certs);
+		if (configDump.configs.clusters.dynamic_active_clusters) {
+			for (var dynamicCluster of configDump.configs.clusters.dynamic_active_clusters) {
+				if (clusterHasTraffic(dynamicCluster.cluster.name, stats)
+						|| referencedClusters.indexOf(dynamicCluster.cluster.name) >= 0) {
+					printCluster(dynamicCluster.cluster, stats, certs);
+				}
 			}
 		}
 	}
