@@ -3,16 +3,37 @@ set -o errexit
 
 SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [ -z "$1" ]; then
-    echo "Usage: $0 <context>"
+ARGS=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --namespace)
+      NAMESPACE=$2
+      shift
+      ;;
+    -n)
+      NAMESPACE=$2
+      shift
+      ;;
+    *)
+      POD=$1
+  esac
+
+  shift
+done
+
+if [ -z "$POD" ]; then
+    echo "Usage: $0 [--namespace <namespace>] <pod>"
     exit 1
 fi
 
-POD=$1
+
+if [[ ! -z $NAMESPACE ]]; then
+  ARGS="$ARGS --namespace $NAMESPACE"
+fi
 
 echo PodCheck for $POD
 node $SCRIPTPATH/cli.js \
-	<(kubectl exec $POD -c istio-proxy -- curl --silent localhost:15000/config_dump) \
-	<(kubectl exec $POD -c istio-proxy -- curl --silent localhost:15000/stats) \
-	<(kubectl exec $POD -c istio-proxy -- curl --silent localhost:15000/certs) \
-	
+	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/config_dump) \
+	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/stats) \
+	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/certs)

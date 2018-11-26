@@ -6,7 +6,7 @@ Envoy Visualization of Istio Configuration
 
 ## HTML output
 
-Usage `./gpodcheck.sh <pod> > mark.html && open mark.html`
+Usage `./gpodcheck.sh [--namespace <namespace>] <pod> > mark.html && open mark.html`
 
 ![Sample output](graphical.png?raw=true "Sample output")
 
@@ -15,18 +15,11 @@ I will try to get the code put into the Istio sidecar because the current output
 
 ## Text output
 
-Usage `./podcheck.sh <pod>`
+Usage `./podcheck.sh [--namespace <namespace>] <pod>`
 
 
 The
 CLI version merely writes text to standard output.
-
-## For pods in the istio-system namespace
-
-- Usage `./syspodcheck.sh <pod>`
-- Usage `./gsyspodcheck.sh <pod> > mark.html && open mark.html`
-
-You should be able to check the Ingress and Egress Gateways.
 
 If the IngressGateway reports `WARNING: No listeners` it means that you
 have not defined any Gateways and VirtualServices. 
@@ -76,7 +69,6 @@ Cluster: inbound|9443||reviews.default.svc.cluster.local
   WARNING No successful HTTP traffic
 ```
 
-Future: It would be cool to produce a diagram.  I have some ideas.
 Email/Slack snible@us.ibm.com to collaborate.
 
 # Developer
