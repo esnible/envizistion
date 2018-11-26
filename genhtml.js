@@ -11,12 +11,13 @@ var fs = require('fs');
 
 function main() {
 	if (process.argv.length < 5) {
-		console.log("Usage: node genhtml.js config_dump.json stats.txt certs.txt")
+		console.log("Usage: node genhtml.js config_dump.json stats.txt certs.json clusters.txt")
 		return 1
 	}
 	var configDumpName = process.argv[2];
 	var statsName = process.argv[3];
 	var certsName = process.argv[4];
+	var clustersName = process.argv[5] || "";
 
 	fs.readFile(configDumpName, 'utf8', function (err, configDumpData) {
 	    if (err) throw err;
@@ -28,7 +29,11 @@ function main() {
 			fs.readFile(certsName, 'utf8', function (err, certsData) {
 			    if (err) throw err;
 			    var certs = JSON.parse(certsData);
-			    processEnvoy11(configDump, statsData, processCertsJson11(certs))
+
+			    fs.readFile(clustersName, 'utf8', function (err, endpointsData) {
+				    if (err && clustersName != "") { throw err; }
+				    processEnvoy11(configDump, statsData, processCertsJson11(certs), processColonText(endpointsData));
+			    });
 			});
 		});
 	});
@@ -119,17 +124,53 @@ function escapeLine(s, escapes) {
 	return s;
 }
 
+// endpoints data is a string of lines; each line has a format like
+// "inbound|9080||productpage.default.svc.cluster.local::127.0.0.1:9080::cx_active::0"
+function processColonText(endpointsData) {
+	if (!endpointsData) return {};
+
+	var retval = {}
+	var lines = endpointsData.split("\n");
+	lines.forEach(function(line) {
+		if (line == "") return;
+		var keyVal = line.split("::");
+		var traversal = keyVal.slice(0, -1);
+		var subval = retval, prevSubval, prevKey;
+		traversal.forEach(function(key) {
+			var newSubval = subval[key];
+			if (!newSubval) {
+				newSubval = {};
+				subval[key] = newSubval;
+			}
+			prevSubval = subval;
+			subval = newSubval;
+			prevKey = key;
+		});
+		var val = keyVal[keyVal.length-1];
+		try {
+			var v = parseInt(keyVal[keyVal.length-1]);
+			if (!(isNaN(v))) {
+				val = v;
+			}
+		} catch (err) {
+			// do nothing; keep string
+		}
+		prevSubval[prevKey] = val;
+	});
+	return retval;
+}
+
 // statsData is a string of lines, each line has a format like
 // "cluster.inbound|9080||details.default.svc.cluster.local.external.upstream_rq_2xx: 6"
 // but because the periods that are part of cluster and listener names aren't escaped we
 // can process this by splitting on "."
-function processStatsData(statsData, escapes) {
+function processDottedText(statsData, dontBreaks) {
 	var retval = {}
 	var lines = statsData.split("\n");
-	var reversedEscapes = Object.keys(escapes)
-    	.reduce(function(accum, key) { accum[escapes[key]] = key; return accum; }, {});
+	var reversedEscapes = Object.keys(dontBreaks)
+		.reduce(function(accum, key) { accum[dontBreaks[key]] = key; return accum; }, {});
 	lines.forEach(function(line) {
-		line = escapeLine(line, escapes);
+		line = escapeLine(line, dontBreaks);
 		var keyVal = line.split(": ");
 		var traversal = keyVal[0].split('.');
 		var subval = retval, prevSubval, prevKey;
@@ -505,6 +546,54 @@ function htmlCluster(cluster, stats, certs) {
 	console.log("</div>");
 }
 
+function htmlEndpoint(clusterName, endpointName, endpoint) {
+	console.log("<div class='endpoint'>");
+	console.log(clusterName + " <b>" + endpointName + "</b><br>");
+	console.log(endpoint.health_flags + " " + endpoint.zone + "<br>");
+	if (endpoint.rq_timeout > 0) {
+		console.log("<span class='problem'>TIMEOUT " + endpoint.rq_timeout + "</span><br>");
+	}
+	if (endpoint.cx_connect_fail > 0) {
+		console.log("<span class='problem'>CONNECT FAIL " + endpoint.cx_connect_fail + "</span><br>");
+	}
+	if (endpoint.rq_error > 0) {
+		console.log("<span class='problem'>ERROR " + endpoint.rq_error + "</span><br>");
+	}
+	if (endpoint.rq_success == 0) {
+		// Sometimes Envoy returns a total that is not the sum of error+success+timeout and success is 0.
+		if (endpoint.rq_total == 0) {
+			console.log("<span class='warning'>SUCCESS " + endpoint.rq_success + "</span><br>");
+		} else {
+			console.log("Total " + endpoint.rq_total + "<br>");
+		}
+	} else {
+		console.log("Success " + endpoint.rq_success + "<br>");
+	}
+	console.log("</div>");
+}
+
+function isEndpoint(candidateName) {
+	return candidateName.match(/^[1-9]/);
+}
+
+function htmlClusterDef(clusterName, clusterDef, outMsgs) {
+	if (typeof clusterDef == 'undefined') return;
+
+	var endpoints = 0;
+	for (var candidate of Object.keys(clusterDef)) {
+		if (isEndpoint(candidate)) {
+			htmlEndpoint(clusterName, candidate, clusterDef[candidate]);
+			endpoints++;
+		}
+	}
+	if (endpoints == 0) {
+		// outMsgs.push("No endpoints for " + clusterName);
+		console.log("<div class='endpoint'>");
+		console.log("<span class='warning'>No endpoints for " + clusterName + "</span><br>");
+		console.log("</div>");
+	}
+}
+
 function inboundListener(listener) {
 	for (var filterChain of listener.filter_chains) {
 		// If the listener is terminating TLS consider it inbound
@@ -515,10 +604,12 @@ function inboundListener(listener) {
 	return false;
 }
 
-function processEnvoy11(configDump, rawStats, certs) {
+function processEnvoy11(configDump, rawStats, certs, clusterDefs) {
+	// Is this a Envoy 1.0 format?
 	if (configDump.configs.bootstrap) {
-	    var escapes = escapesFromConfig(configDump);
-		return genHtml(configDump, processStatsData(rawStats, escapes), certs);
+		var escapes = escapesFromConfig(configDump);
+		return genHtml(configDump, processDottedText(rawStats, escapes), certs,
+				clusterDefs);
 	}
 
 	// each config has a "@type":
@@ -544,7 +635,8 @@ function processEnvoy11(configDump, rawStats, certs) {
 	var configDump10 = {configs: typedConfig};
     var escapes = escapesFromConfig(configDump10);
 
-	genHtml(configDump10, processStatsData(rawStats, escapes), certs);
+	genHtml(configDump10, processDottedText(rawStats, escapes), certs,
+			clusterDefs);
 }
 
 function htmlBootstrap(bootstrap) {
@@ -669,7 +761,7 @@ function routeReferencedClustersWithTraffic(routeConfig, stats, outMsgs) {
 	return retval;
 }
 
-function genHtml(configDump, stats, certs) {
+function genHtml(configDump, stats, certs, clusterDefs) {
 	console.log("<!DOCTYPE html>");
 	console.log("<html>");
 	console.log("<head>");
@@ -682,7 +774,7 @@ function genHtml(configDump, stats, certs) {
 	htmlBootstrap(configDump.configs.bootstrap);
 
 	console.log("<p><table border=1 frame=hsides rules=rows>")
-	console.log("<tr><th align='center'>Listeners</th><th align='center'>Routes</th><th align='center'>Clusters</th></tr>");
+	console.log("<tr><th align='center'>Listeners</th><th align='center'>Routes</th><th align='center'>Clusters</th><th align='center'>Endpoints</th></tr>");
 
 	// Listeners we will show on the screen
 	var listenerRows = {};
@@ -756,6 +848,10 @@ function genHtml(configDump, stats, certs) {
 			}
 		}
 
+		console.log('</td><td valign="middle">');
+		for (var clusterName of clusters) {
+			htmlClusterDef(clusterName, clusterDefs[clusterName], outMsgs);
+		}
 		console.log("</td></tr>");
 	}
 
@@ -764,13 +860,20 @@ function genHtml(configDump, stats, certs) {
 	console.log('</td><td valign="middle">');
 	console.log('</td><td valign="middle">');
 
+	clusters = [];
 	for (var clusterName of Object.keys(allClusters)) {
 		if (clustersShown.indexOf(clusterName) < 0 && clusterHasTraffic(clusterName, stats)) {
 			var cluster = allClusters[clusterName];
 			console.log("<p>");
 			htmlCluster(cluster, stats, certs);
 			clustersShown.push(clusterName);
+			clusters.push(clusterName);
 		}
+	}
+
+	console.log('</td><td valign="middle">');
+	for (var clusterName of clusters) {
+		htmlClusterDef(clusterName, clusterDefs[clusterName], outMsgs);
 	}
 
 	console.log("</td></tr>");

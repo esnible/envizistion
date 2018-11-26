@@ -36,4 +36,5 @@ fi
 node $SCRIPTPATH/genhtml.js \
 	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/config_dump) \
 	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/stats) \
-	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/certs)
+	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/certs) \
+	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/clusters)
