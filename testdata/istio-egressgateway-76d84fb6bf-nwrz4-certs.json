@@ -1,0 +1,30 @@
+{
+ "certificates": [
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "e7db1088d32eb335e6fda44ef00d325c",
+     "subject_alt_names": [],
+     "days_until_expiration": "357",
+     "valid_from": "2018-11-20T20:23:02Z",
+     "expiration_time": "2019-11-20T20:23:02Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "0b9800c13deea2c09cea2b17513e8313",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/istio-system/sa/istio-egressgateway-service-account"
+      }
+     ],
+     "days_until_expiration": "89",
+     "valid_from": "2018-11-27T19:44:35Z",
+     "expiration_time": "2019-02-25T19:44:35Z"
+    }
+   ]
+  }
+ ]
+}

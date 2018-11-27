@@ -1034,7 +1034,8 @@ function genHtml(configDump, stats, certs, clusterDefs) {
 
 	if (!configDump.configs.listeners.dynamic_active_listeners
 			&& !configDump.configs.clusters.dynamic_active_clusters) {
-		if (sourceId(configDump).indexOf("istio-pilot") < 0) {
+		var sid = sourceId(configDump);
+		if (sid && sid.indexOf("istio-pilot") < 0) {
 			outMsgs.push("<span class='problem'>No dynamic configuration (never contacted Pilot?)</span><br>");
 		}
 	}
