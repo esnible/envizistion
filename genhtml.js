@@ -644,6 +644,40 @@ function processEnvoy11(configDump, rawStats, certs, clusterDefs) {
 			clusterDefs);
 }
 
+function sourceId(configDump) {
+	for (var listener of allListeners(configDump)) {
+		for (var filterChain of listener.filter_chains) {
+			for (var filter of filterChain.filters) {
+				if (filter.name == "envoy.http_connection_manager") {
+					if (Array.isArray(filter.config.http_filters)) {
+						for (var httpFilter of filter.config.http_filters) {
+							if (httpFilter.name == "mixer") {
+								return httpFilter.config.transport.attributes_for_mixer_proxy.attributes["source.uid"].string_value;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return undefined;
+}
+
+function htmlIdentity(configDump) {
+	var podId = sourceId(configDump);
+	if (!podId) {
+		return;
+	}
+
+	var match = /kubernetes:\/\/(.*)/.exec(podId);
+	if (match) {
+		podId = match[1];
+	}
+
+	console.log("<span class='envoy'>Pod: " + podId + "</span><br>");
+}
+
 function htmlBootstrap(bootstrap) {
 	if (bootstrap.bootstrap.node.metadata) {
 		console.log('<span class="envoy">Istio version: ' + bootstrap.bootstrap.node.metadata.ISTIO_VERSION + "</span><br>");
@@ -753,13 +787,18 @@ function listenerReferencedClusters(listener) {
 	return retval;
 }
 
-function routeReferencedClustersWithTraffic(routeConfig, stats, outMsgs) {
+function routeReferencedClustersWithTraffic(routeConfig, stats, allClusters, outMsgs) {
 	var retval = [];
 
 	for (var virtualHost of routeConfig.virtual_hosts) {
 		var printedDomains = false;
 		for (var route of virtualHost.routes) {
-			if (clusterHasTraffic(route.route.cluster, stats, outMsgs) || route.route.cluster.startsWith("inbound|")) {
+			// If the cluster is inbound show it even if there is no traffic
+			var cluster = allClusters[route.route.cluster];
+			var bSocket = cluster.hosts && cluster.hosts.length > 0 && cluster.hosts[0].socket_address;
+			if (clusterHasTraffic(route.route.cluster, stats, outMsgs) 
+					|| route.route.cluster.startsWith("inbound|") 
+					|| bSocket) {
 				retval.push(route.route.cluster);
 			}
 		}
@@ -784,6 +823,59 @@ function referencedListeners(configDump, stats) {
 	return visibleListeners;
 }
 
+function linkEnvoy(listener, route, cluster) {
+	if (!listener.clusterLinks) {
+		listener.clusterLinks = [];
+	}
+	if (!listener.clusterReferences) {
+		listener.clusterReferences = [];
+	}
+	if (!listener.routeLinks) {
+		listener.routeLinks = [];
+	}
+	if (route) {
+		if (!route.clusterLinks) {
+			route.clusterLinks = [];
+		}
+		if (!route.clusterReferences) {
+			route.clusterReferences = [];
+		}
+	}
+	if (cluster) {
+		if (!cluster.listenerReferences) {
+			cluster.listenerReferences = [];
+		}
+		if (!cluster.routeReferences) {
+			cluster.routeReferences = [];
+		}
+	}
+
+	if (route) {
+		if (cluster.routeLink) {
+			if (!(cluster.routeLink === route)) {
+				// already "contained" by another route for tree view
+				route.clusterReferences.push(cluster);
+				cluster.routeReferences.push(route);
+			}
+		} else {
+			cluster.routeLink = route;
+			route.clusterLinks = route.clusterLinks.concat(cluster);
+		}
+	}
+	if (cluster) {
+		if (cluster.listenerLink) {
+			if (!(cluster.listenerLink === listener)) {
+				// already "contained" by another listener for tree view
+				listener.clusterReferences.push(cluster);
+				cluster.listenerReferences.push(listener);
+			}
+		} else {
+			cluster.listenerLink = listener;
+			listener.clusterLinks = listener.clusterLinks.concat(cluster);
+		}
+	}
+}
+
 // Mutate data structure linking listener, route, and clusters directly
 function linkListeners(configDump, stats, allClusters, outMsgs) {
 	var allRoutes = routesByName(configDump);
@@ -791,33 +883,26 @@ function linkListeners(configDump, stats, allClusters, outMsgs) {
 	var listeners = referencedListeners(configDump, stats);
 	var clustersShown = [];
 	for (var listener of listeners) {
-		listener.clusterLinks = listenerReferencedClusters(listener);
-		for (var clusterName of listener.clusterLinks) {
+		var clusters = listenerReferencedClusters(listener);
+		for (var clusterName of clusters) {
 			var cluster = allClusters[clusterName];
 			if (!cluster) {
 				// e.g. "outbound|15443||non.existent.cluster"
 				cluster = {name: clusterName, type: ""};
 				allClusters[clusterName] = cluster
 			}
-			if (cluster.listenerLink) throw "Internal error; more than one listener for " + cluster.name;
-			cluster.listenerLink = listener;
+			linkEnvoy(listener, null, cluster);
 		}
 		var routes = referencedRoutes(listener);
 		for (var routeName of routes) {
 			var route = allRoutes[routeName];
 			if (route) {
 				route.listenerLink = listener;
-				route.clusterLinks = [];
-				var clusters = routeReferencedClustersWithTraffic(route, stats, outMsgs);
+				var clusters = routeReferencedClustersWithTraffic(route, stats, allClusters, outMsgs);
 				for (var clusterName of clusters) {
 					clustersShown.push(clusterName);
 					var cluster = allClusters[clusterName];
-					if (cluster.routeLink && !(cluster.routeLink === route)) throw "Internal error; more than one route for " + cluster.name + "; new route is " + route.name + " old route was " + cluster.routeLink.name;
-					cluster.routeLink = route;
-					if (cluster.listenerLink && !(cluster.listenerLink == listener)) throw "Internal error; more than one listener for " + cluster.name;
-					cluster.listenerLink = listener;
-					route.clusterLinks = route.clusterLinks.concat(cluster);
-					listener.clusterLinks = listener.clusterLinks.concat(cluster);
+					linkEnvoy(listener, route, cluster);
 				}
 			} else {
 				console.log("internal error: no cluster for " + routeName);
@@ -826,20 +911,17 @@ function linkListeners(configDump, stats, allClusters, outMsgs) {
 	}
 
 	// Now create fake "head" listener for clusters that do not have a real one
-	var fakeListener = {name: "", clusterLinks: [], filter_chains: []};
-	var fakeRoute = {name: "", clusterLinks: []};
+	var fakeListener = {name: "", filter_chains: []};
+	var fakeRoute = {name: ""};
 	for (var clusterName of Object.keys(allClusters)) {
 		if (clustersShown.indexOf(clusterName) < 0 && clusterHasTraffic(clusterName, stats, outMsgs)) {
 			var cluster = allClusters[clusterName];
 			clustersShown.push(clusterName);
-			cluster.listenerLink = fakeListener;
-			cluster.routeLink = fakeRoute;
-			fakeListener.clusterLinks.push(cluster);
-			fakeRoute.clusterLinks.push(cluster)
+			linkEnvoy(fakeListener, fakeRoute. cluster);
 		}
 	}
 
-	if (fakeListener.clusterLinks.length) {
+	if (fakeListener.clusterLinks && fakeListener.clusterLinks.length) {
 		listeners.push(fakeListener);
 	}
 
@@ -887,12 +969,14 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 		if (prevListenerName != cluster.listenerLink.name) {
 			console.log('<td valign="middle" rowspan="' + cluster.listenerLink.clusterLinks.length + '">');
 			if (cluster.listenerLink.name) {
-				htmlListener(cluster.listenerLink, stats, certs);
-				if (listenerHasTraffic(cluster.listenerLink, stats)) {
-					listenersWithTraffic++;
-				}
-				if (inboundListener(cluster.listenerLink)) {
-					inboundListeners++;
+				for (var listener of cluster.listenerReferences.concat(cluster.listenerLink)) {
+					htmlListener(listener, stats, certs);
+					if (listenerHasTraffic(listener, stats)) {
+						listenersWithTraffic++;
+					}
+					if (inboundListener(listener)) {
+						inboundListeners++;
+					}
 				}
 			}
 			console.log('</td>');
@@ -902,7 +986,9 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 		if (cluster.routeLink) {
 			if (prevRouteName != cluster.routeLink.name) {
 				console.log('<td valign="middle" rowspan="' + cluster.routeLink.clusterLinks.length + '">');
-				htmlRoute(cluster.routeLink, stats, allClusters, outMsgs);
+				for (var route of cluster.routeReferences.concat(cluster.routeLink)) {
+					htmlRoute(route, stats, allClusters, outMsgs);
+				}
 				console.log('</td>');
 				prevRouteName = cluster.routeLink.name;
 			}
@@ -923,6 +1009,9 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 
 	console.log("</table>")
 
+	if (inboundListeners == 0) {
+		outMsgs.push("<p><span class='warning'>WARNING: No inbound listeners</span><br>");
+	}
 	if (listenersWithTraffic == 0) {
 		outMsgs.push("<p><span class='warning'>WARNING: No traffic</span><br>");
 	}
@@ -938,9 +1027,16 @@ function genHtml(configDump, stats, certs, clusterDefs) {
 	console.log("</head>");
 	console.log("<body>");
 
+	htmlIdentity(configDump);
 	htmlBootstrap(configDump.configs.bootstrap);
 
 	var outMsgs = [];
+
+	if (!configDump.configs.listeners.dynamic_active_listeners
+			&& !configDump.configs.clusters.dynamic_active_clusters) {
+		outMsgs.push("<span class='problem'>No dynamic configuration (never contacted Pilot?)</span><br>");
+	}
+
 	genTable(configDump, stats, certs, clusterDefs, outMsgs);
 	
 	// Uniquify
