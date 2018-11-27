@@ -917,7 +917,7 @@ function linkListeners(configDump, stats, allClusters, outMsgs) {
 		if (clustersShown.indexOf(clusterName) < 0 && clusterHasTraffic(clusterName, stats, outMsgs)) {
 			var cluster = allClusters[clusterName];
 			clustersShown.push(clusterName);
-			linkEnvoy(fakeListener, fakeRoute. cluster);
+			linkEnvoy(fakeListener, fakeRoute, cluster);
 		}
 	}
 
@@ -1034,7 +1034,9 @@ function genHtml(configDump, stats, certs, clusterDefs) {
 
 	if (!configDump.configs.listeners.dynamic_active_listeners
 			&& !configDump.configs.clusters.dynamic_active_clusters) {
-		outMsgs.push("<span class='problem'>No dynamic configuration (never contacted Pilot?)</span><br>");
+		if (sourceId(configDump).indexOf("istio-pilot") < 0) {
+			outMsgs.push("<span class='problem'>No dynamic configuration (never contacted Pilot?)</span><br>");
+		}
 	}
 
 	genTable(configDump, stats, certs, clusterDefs, outMsgs);
