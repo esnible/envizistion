@@ -1019,13 +1019,15 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 
 
 function genHtml(configDump, stats, certs, clusterDefs) {
-	console.log("<!DOCTYPE html>");
-	console.log("<html>");
-	console.log("<head>");
-	console.log("<title>Envistion</title>");
-	console.log("<link rel='stylesheet' href='genhtml.css'>");
-	console.log("</head>");
-	console.log("<body>");
+	if (!process.env.ENVIZISTION_BODY_ONLY) {
+		console.log("<!DOCTYPE html>");
+		console.log("<html>");
+		console.log("<head>");
+		console.log("<title>Envistion</title>");
+		console.log("<link rel='stylesheet' href='genhtml.css'>");
+		console.log("</head>");
+		console.log("<body>");
+	}
 
 	htmlIdentity(configDump);
 	htmlBootstrap(configDump.configs.bootstrap);
@@ -1049,8 +1051,10 @@ function genHtml(configDump, stats, certs, clusterDefs) {
 		console.log(outMsg);
 	}
 
-	console.log("</body>");
-	console.log("</html>");
+	if (!process.env.ENVIZISTION_BODY_ONLY) {
+		console.log("</body>");
+		console.log("</html>");
+	}
 }
 
 try {
