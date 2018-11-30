@@ -16,6 +16,10 @@ while [[ $# -gt 0 ]]; do
       NAMESPACE=$2
       shift
       ;;
+    --context)
+      CONTEXT=$2
+      shift
+      ;;
     *)
       POD=$1
   esac
@@ -26,6 +30,11 @@ done
 if [[ ! -z $NAMESPACE ]]; then
   ARGS="$ARGS --namespace $NAMESPACE"
   KARGS="$KARGS --namespace $NAMESPACE"
+fi
+
+if [[ ! -z $CONTEXT ]]; then
+  ARGS="$ARGS --context $CONTEXT"
+  KARGS="$KARGS --context $NAMESPACE"
 fi
 
 echo "<!DOCTYPE html>"
