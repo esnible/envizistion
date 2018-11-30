@@ -316,7 +316,6 @@ function htmlCert(label, filename, certs, importantDays) {
 
 function htmlListener(listener, stats, certs) {
 	console.log("<div class='listener'>");
-	// console.log(JSON.stringify(listener));
 	console.log("<b>" + listener.name + "</b><br>");
 
 	if (listener.listener_filters) {
@@ -362,7 +361,7 @@ function htmlListener(listener, stats, certs) {
 	if (listenerStats) {
 		if (listenerStats.downstream_rq_2xx > 0) {
 			console.log("  Successful HTTP 2xx " + listenerStats.downstream_rq_2xx + "<br>");
-		} else {
+		} else if (listener.name != "virtual") {
 			console.log("  <span class='warning'>Warning no successful HTTP</span><br>");
 		}
 		if (listenerStats.downstream_rq_4xx > 0
@@ -519,6 +518,9 @@ function htmlCluster(cluster, stats, certs) {
 	}
 
 	if (cluster.tls_context) {
+		if (cluster.tls_context.sni) {
+			console.log("=>SNI: <b>" + cluster.tls_context.sni + "</b><br>");
+		}
 		htmlCert("CA", cluster.tls_context.common_tls_context.validation_context.trusted_ca.filename, certs, 10);
 		// console.log("  CA filename " + filterChain.tls_context.common_tls_context.validation_context.trusted_ca.filename);
 		// console.log("  filterChain[i].tls_context.common_tls_context.validation_context.trusted_ca has keys " + Object.keys(filterChain.tls_context.common_tls_context.validation_context.trusted_ca));
@@ -581,7 +583,7 @@ function isEndpoint(candidateName) {
 	return candidateName.match(/^[1-9]/);
 }
 
-function htmlClusterDef(clusterName, clusterDef, outMsgs) {
+function htmlClusterDef(clusterName, clusterDef, cluster, outMsgs) {
 	if (typeof clusterDef == 'undefined') return;
 
 	var endpoints = 0;
@@ -591,10 +593,10 @@ function htmlClusterDef(clusterName, clusterDef, outMsgs) {
 			endpoints++;
 		}
 	}
-	if (endpoints == 0) {
+	if (endpoints == 0 && cluster.type != "ORIGINAL_DST") {
 		// outMsgs.push("No endpoints for " + clusterName);
 		console.log("<div class='endpoint'>");
-		console.log("<span class='warning'>No endpoints for " + clusterName + "</span><br>");
+		console.log("<span class='warning'>Warning: No endpoints for " + clusterName + "</span><br>");
 		console.log("</div>");
 	}
 }
@@ -892,6 +894,7 @@ function linkListeners(configDump, stats, allClusters, outMsgs) {
 				allClusters[clusterName] = cluster
 			}
 			linkEnvoy(listener, null, cluster);
+			clustersShown.push(clusterName);
 		}
 		var routes = referencedRoutes(listener);
 		for (var routeName of routes) {
@@ -1002,7 +1005,7 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 		console.log('</td>');
 
 		console.log('<td valign="middle">');
-		htmlClusterDef(clusterName, clusterDefs[clusterName], outMsgs);
+		htmlClusterDef(clusterName, clusterDefs[clusterName], cluster, outMsgs);
 		console.log('</td>');
 		console.log("</tr>");
 	}
