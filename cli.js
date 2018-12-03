@@ -369,17 +369,19 @@ function printCluster(cluster, stats, certs) {
 		}
 	}
 
-	if (stats.cluster[cluster.name].upstream_rq_2xx > 0) {
-		console.log("  Successful HTTP 2xx " + stats.cluster[cluster.name].upstream_rq_2xx);
-	} else if (cluster.name.startsWith('inbound|')) {
-		console.log("  WARNING No successful HTTP traffic");
-	}
-	if (stats.cluster[cluster.name].upstream_rq_4xx > 0
-			|| stats.cluster[cluster.name].upstream_rq_5xx > 0) {
-		console.log("  ERRORS " + renderBreakdown(stats.cluster[cluster.name], /upstream_rq_([45][0-9][0-9])/));
-	}
-	if (stats.cluster[cluster.name].upstream_cx_connect_fail > 0) {
-		console.log("  CONNECTION FAILURES " + stats.cluster[cluster.name].upstream_cx_connect_fail);
+	if (stats.cluster[cluster.name]) {
+		if (stats.cluster[cluster.name].upstream_rq_2xx > 0) {
+			console.log("  Successful HTTP 2xx " + stats.cluster[cluster.name].upstream_rq_2xx);
+		} else if (cluster.name.startsWith('inbound|')) {
+			console.log("  WARNING No successful HTTP traffic");
+		}
+		if (stats.cluster[cluster.name].upstream_rq_4xx > 0
+				|| stats.cluster[cluster.name].upstream_rq_5xx > 0) {
+			console.log("  ERRORS " + renderBreakdown(stats.cluster[cluster.name], /upstream_rq_([45][0-9][0-9])/));
+		}
+		if (stats.cluster[cluster.name].upstream_cx_connect_fail > 0) {
+			console.log("  CONNECTION FAILURES " + stats.cluster[cluster.name].upstream_cx_connect_fail);
+		}
 	}
 }
 

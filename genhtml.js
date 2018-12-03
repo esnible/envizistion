@@ -290,7 +290,7 @@ function statsForListener(listener, stats) {
 		return stats.tcp[tcpPrefix];
 	}
 	var httpPrefix = statPrefixHttp(listener);
-	if (httpPrefix && stats.http[httpPrefix]) {
+	if (httpPrefix && stats.http && stats.http[httpPrefix]) {
 		return stats.http[httpPrefix];
 	}
 	return {};
@@ -647,6 +647,9 @@ function processEnvoy11(configDump, rawStats, certs, clusterDefs) {
 }
 
 function sourceId(configDump) {
+	if (configDump.configs.bootstrap.bootstrap.node.id) {
+		return configDump.configs.bootstrap.bootstrap.node.id.split('~')[2];
+	}
 	for (var listener of allListeners(configDump)) {
 		for (var filterChain of listener.filter_chains) {
 			for (var filter of filterChain.filters) {

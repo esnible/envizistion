@@ -1,0 +1,30 @@
+{
+ "certificates": [
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "e7db1088d32eb335e6fda44ef00d325c",
+     "subject_alt_names": [],
+     "days_until_expiration": "352",
+     "valid_from": "2018-11-20T20:23:02Z",
+     "expiration_time": "2019-11-20T20:23:02Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "5158eefa8c1d2786102d4aec6c39460c",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "84",
+     "valid_from": "2018-11-28T13:42:25Z",
+     "expiration_time": "2019-02-26T13:42:25Z"
+    }
+   ]
+  }
+ ]
+}
