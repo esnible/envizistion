@@ -268,9 +268,9 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 
 	// TODO Replace this ad-hoc logic with parsing of `stat_prefix` in config dump.
 	var listenerHttp;
-	if (stats.http[listener.name]) {
+	if (stats.http && stats.http[listener.name]) {
 		listenerHttp = stats.http[listener.name];
-	} else if (stats.listener[listener.name] &&
+	} else if (stats.listener && stats.listener[listener.name] &&
 			stats.listener[listener.name].http &&
 			stats.listener[listener.name].http[listener.name]) {
 		listenerHttp = stats.listener[listener.name].http;
@@ -288,7 +288,7 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 		}
 	}
 
-	if (stats.listener[listener.name] && stats.listener[listener.name].ssl) {
+	if (stats.listener && stats.listener[listener.name] && stats.listener[listener.name].ssl) {
 		console.log("  SSL handshakes: " + stats.listener[listener.name].ssl.handshake);
 		if (stats.listener[listener.name].ssl.connection_error) {
 			console.log("  SSL connection errors: " + stats.listener[listener.name].ssl.connection_error);

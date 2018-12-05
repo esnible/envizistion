@@ -233,19 +233,36 @@ function processCertsJson11(rawCerts) {
 	return retval;
 }
 
-function clusterHasTraffic(cluster, stats, outMsgs) {
-	var clusterStats = stats.cluster[cluster];
-	if (!clusterStats) {
-		// happens if no K8s Service references pod (or subset created after pod?)
-		outMsgs.push("<span class='warning'>warning no stats for cluster " + cluster + "</span><br>");
-		return false; // should never happen, might happen if there is a stats/config mismatch
-	}
-	return clusterStats.upstream_rq_2xx > 0
+function clusterHasTraffic(clusterName, stats, clusterDefs, outMsgs) {
+	var clusterStats = stats.cluster[clusterName];
+	if (clusterStats) {
+		return clusterStats.upstream_rq_2xx > 0
 		|| clusterStats.upstream_rq_3xx > 0
 		|| clusterStats.upstream_rq_4xx > 0
 		|| clusterStats.upstream_rq_5xx > 0
 		|| clusterStats.upstream_cx_connect_fail > 0
 		|| clusterStats.upstream_cx_total > 0;
+	}
+
+	// Sometimes the cluster is not referenced in :15000/stats but is in :15000/clusters
+	// I am not sure why
+	var endpointStats = clusterDefs[clusterName];
+	if (endpointStats) {
+		for (var candidateHostPort of Object.keys(endpointStats)) {
+			// endPointStats will have things like
+			// prometheus_stats::127.0.0.1:15000::cx_total::1
+			// We are looking for entries of the form <cluster>.<anything>.cx_total
+			if (endpointStats[candidateHostPort].cx_total > 0
+				|| endpointStats[candidateHostPort].cx_connect_fail > 0) {
+				return true;
+			}
+		}
+	}
+	
+	// happens if no K8s Service references pod (or subset created after pod?)
+	// (Also happens for BlueCompute on Istio 1.1, and it happens a lot, so I am suppressing for now.)
+	// outMsgs.push("<span class='warning'>warning no stats for cluster " + clusterName + "</span><br>");
+	return false; // should never happen, might happen if there is a stats/config mismatch
 }
 
 function statPrefixHttp(listener) {
@@ -286,7 +303,7 @@ function statPrefixTcp(listener) {
 
 function statsForListener(listener, stats) {
 	var tcpPrefix = statPrefixTcp(listener);
-	if (tcpPrefix && stats.tcp[tcpPrefix]) {
+	if (tcpPrefix && stats.tcp && stats.tcp[tcpPrefix]) {
 		return stats.tcp[tcpPrefix];
 	}
 	var httpPrefix = statPrefixHttp(listener);
@@ -296,8 +313,22 @@ function statsForListener(listener, stats) {
 	return {};
 }
 
-function listenerHasTraffic(listener, stats) {
-	return statsForListener(listener, stats).downstream_cx_total > 0;
+function listenerHasTraffic(listener, stats, clusterDefs, allRoutes, allClusters) {
+	var lstats = statsForListener(listener, stats);
+	if ("downstream_cx_total" in lstats) {
+		return lstats.downstream_cx_total > 0;
+	}
+
+	// If the listener does not have stats from :15000/stats see if it
+	// is connected to any clusters with traffic
+	for (var routeName of referencedRoutes(listener)) {
+		var route = allRoutes[routeName];
+		if (route) {
+			if (routeReferencedClustersWithTraffic(route, stats, clusterDefs, allClusters, []).length > 0) {
+				return true;
+			}
+		}
+	}
 }
 
 function htmlCert(label, filename, certs, importantDays) {
@@ -370,7 +401,7 @@ function htmlListener(listener, stats, certs) {
 		}
 	}
 
-	if (stats.listener[listener.name] && stats.listener[listener.name].ssl) {
+	if (stats.listener && stats.listener[listener.name] && stats.listener[listener.name].ssl) {
 		console.log("  SSL handshakes: " + stats.listener[listener.name].ssl.handshake + "<br>");
 		if (stats.listener[listener.name].ssl.connection_error) {
 			console.log("<span class='problem'>SSL connection errors: " + stats.listener[listener.name].ssl.connection_error + "</span><br>");
@@ -452,7 +483,7 @@ function unknownCluster(clusterName, allClusters) {
 	return !allClusters[clusterName];
 }
 
-function htmlRoute(routeConfig, stats, allClusters, outMsgs) {
+function htmlRoute(routeConfig, stats, clusterDefs, allClusters, outMsgs) {
 	if (!routeConfig.name) {
 		return; // Ignore "virtualHost" style route
 	}
@@ -464,7 +495,7 @@ function htmlRoute(routeConfig, stats, allClusters, outMsgs) {
 		var printedDomains = false;
 		// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-route
 		for (var route of virtualHost.routes) {
-			if (clusterHasTraffic(route.route.cluster, stats, outMsgs)
+			if (clusterHasTraffic(route.route.cluster, stats, clusterDefs, outMsgs)
 					|| route.route.cluster.startsWith("inbound|")
 					|| unknownCluster(route.route.cluster, allClusters)) {
 				clustersDisplayed++;
@@ -745,8 +776,8 @@ function clustersByName(configDump) {
 	return retval;
 }
 
-function showListenerp(listener, stats) {
-	return listenerHasTraffic(listener, stats) || inboundListener(listener);
+function showListenerp(listener, stats, clusterDefs, allRoutes, allClusters) {
+	return listenerHasTraffic(listener, stats, clusterDefs, allRoutes, allClusters) || inboundListener(listener);
 }
 
 // referencedRoutes() returns an array of route names
@@ -792,7 +823,7 @@ function listenerReferencedClusters(listener) {
 	return retval;
 }
 
-function routeReferencedClustersWithTraffic(routeConfig, stats, allClusters, outMsgs) {
+function routeReferencedClustersWithTraffic(routeConfig, stats, clusterDefs, allClusters, outMsgs) {
 	var retval = [];
 
 	for (var virtualHost of routeConfig.virtual_hosts) {
@@ -800,8 +831,12 @@ function routeReferencedClustersWithTraffic(routeConfig, stats, allClusters, out
 		for (var route of virtualHost.routes) {
 			// If the cluster is inbound show it even if there is no traffic
 			var cluster = allClusters[route.route.cluster];
+			if (!cluster) {
+				outMsgs.push("<span class='warning'>No Envoy definition of cluster " + route.route.cluster + "</span><br>");
+				continue;
+			}
 			var bSocket = cluster.hosts && cluster.hosts.length > 0 && cluster.hosts[0].socket_address;
-			if (clusterHasTraffic(route.route.cluster, stats, outMsgs) 
+			if (clusterHasTraffic(route.route.cluster, stats, clusterDefs, outMsgs) 
 					|| route.route.cluster.startsWith("inbound|") 
 					|| bSocket) {
 				retval.push(route.route.cluster);
@@ -812,7 +847,7 @@ function routeReferencedClustersWithTraffic(routeConfig, stats, allClusters, out
 	return retval;
 }
 
-function referencedListeners(configDump, stats) {
+function referencedListeners(configDump, stats, clusterDefs, allRoutes, allClusters) {
 	var visibleListeners = [];
 	for (var listener of allListeners(configDump)) {
 		if (!listener.name) {
@@ -821,7 +856,7 @@ function referencedListeners(configDump, stats) {
 				listener.name = "Anonymous " + listener.address.socket_address.address + "_" + listener.address.socket_address.port_value;
 			}
 		}
-		if (showListenerp(listener, stats)) {
+		if (showListenerp(listener, stats, clusterDefs, allRoutes, allClusters)) {
 			visibleListeners.push(listener);
 		}
 	}
@@ -882,10 +917,10 @@ function linkEnvoy(listener, route, cluster) {
 }
 
 // Mutate data structure linking listener, route, and clusters directly
-function linkListeners(configDump, stats, allClusters, outMsgs) {
+function linkListeners(configDump, stats, clusterDefs, allClusters, outMsgs) {
 	var allRoutes = routesByName(configDump);
 
-	var listeners = referencedListeners(configDump, stats);
+	var listeners = referencedListeners(configDump, stats, clusterDefs, allRoutes, allClusters);
 	var clustersShown = [];
 	for (var listener of listeners) {
 		var clusters = listenerReferencedClusters(listener);
@@ -904,7 +939,7 @@ function linkListeners(configDump, stats, allClusters, outMsgs) {
 			var route = allRoutes[routeName];
 			if (route) {
 				route.listenerLink = listener;
-				var clusters = routeReferencedClustersWithTraffic(route, stats, allClusters, outMsgs);
+				var clusters = routeReferencedClustersWithTraffic(route, stats, clusterDefs, allClusters, outMsgs);
 				for (var clusterName of clusters) {
 					clustersShown.push(clusterName);
 					var cluster = allClusters[clusterName];
@@ -920,7 +955,7 @@ function linkListeners(configDump, stats, allClusters, outMsgs) {
 	var fakeListener = {name: "", filter_chains: []};
 	var fakeRoute = {name: ""};
 	for (var clusterName of Object.keys(allClusters)) {
-		if (clustersShown.indexOf(clusterName) < 0 && clusterHasTraffic(clusterName, stats, outMsgs)) {
+		if (clustersShown.indexOf(clusterName) < 0 && clusterHasTraffic(clusterName, stats, clusterDefs, outMsgs)) {
 			var cluster = allClusters[clusterName];
 			clustersShown.push(clusterName);
 			linkEnvoy(fakeListener, fakeRoute, cluster);
@@ -939,7 +974,7 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 	console.log("<tr><th align='center'>Listeners</th><th align='center'>Routes</th><th align='center'>Clusters</th><th align='center'>Endpoints</th></tr>");
 
 	var allClusters = clustersByName(configDump);
-	var listenerTree = linkListeners(configDump, stats, allClusters, outMsgs);
+	var listenerTree = linkListeners(configDump, stats, clusterDefs, allClusters, outMsgs);
 
 	// Filter for clusters that were linked
 	var visibleClusters = Object.keys(allClusters).filter(function(clusterName) { return allClusters[clusterName].listenerLink; });
@@ -977,7 +1012,7 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 			if (cluster.listenerLink.name) {
 				for (var listener of cluster.listenerReferences.concat(cluster.listenerLink)) {
 					htmlListener(listener, stats, certs);
-					if (listenerHasTraffic(listener, stats)) {
+					if (listenerHasTraffic(listener, stats, clusterDefs, routesByName(configDump), allClusters)) {
 						listenersWithTraffic++;
 					}
 					if (inboundListener(listener)) {
@@ -993,7 +1028,7 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 			if (prevRouteName != cluster.routeLink.name) {
 				console.log('<td valign="middle" rowspan="' + cluster.routeLink.clusterLinks.length + '">');
 				for (var route of cluster.routeReferences.concat(cluster.routeLink)) {
-					htmlRoute(route, stats, allClusters, outMsgs);
+					htmlRoute(route, stats, clusterDefs, allClusters, outMsgs);
 				}
 				console.log('</td>');
 				prevRouteName = cluster.routeLink.name;
