@@ -356,11 +356,42 @@ function htmlListener(listener, stats, certs) {
 	}
 
 	var trafficExpected = true;
+	var authnShown = false;
 	for (var filterChain of listener.filter_chains) {
 
 		for (var filter of filterChain.filters) {
 			if (filter.name == "envoy.http_connection_manager") {
-				// Do nothing, we will show these in another column
+				if (Array.isArray(filter.config.http_filters)) {
+					for (var httpFilter of filter.config.http_filters) {
+						if (httpFilter.name == "istio_authn") {
+							if (!authnShown) {
+								if (httpFilter.config && httpFilter.config.policy && Array.isArray(httpFilter.config.policy.peers)) {
+									for (var peer of httpFilter.config.policy.peers) {
+										console.log("- Istio Authn: " + JSON.stringify(peer))
+									}
+								}
+								authnShown = true;
+							}
+						} else if (httpFilter.name == "mixer") {
+							// Ignore mixer configuration
+							// console.log("-  UNSUPPORT DUMP for mixer http_filter which has config keys " + Object.keys(httpFilter.config) + "<br>");
+						} else if (httpFilter.name == "envoy.cors") {
+							if (httpFilter.config) {
+								console.log("-  configured CORS<br>");
+							}
+						} else if (httpFilter.name == "envoy.router") {
+							if (httpFilter.config) {
+								console.log("-  configured router<br>");
+							}
+						} else if (httpFilter.name == "envoy.fault") {
+							if (httpFilter.config) {
+								console.log("-  configured fault<br>");
+							}
+						} else {
+							console.log("-  UNSUPPORT DUMP for http_filter type name: " + httpFilter.name + " which has keys " + Object.keys(httpFilter) + "<br>");
+						}
+					}
+				}
 			} else if (filter.name == "mixer") {
 				// Ignore filter.config for mixer filters
 				console.log("-  Uses Istio Mixer<br>");
@@ -624,7 +655,7 @@ function htmlClusterDef(clusterName, clusterDef, cluster, outMsgs) {
 			endpoints++;
 		}
 	}
-	if (endpoints == 0 && cluster.type != "ORIGINAL_DST") {
+	if (endpoints == 0 && cluster.type != "ORIGINAL_DST" && clusterName != "BlackHoleCluster") {
 		// outMsgs.push("No endpoints for " + clusterName);
 		console.log("<div class='endpoint'>");
 		console.log("<span class='warning'>Warning: No endpoints for " + clusterName + "</span><br>");
@@ -636,6 +667,14 @@ function inboundListener(listener) {
 	for (var filterChain of listener.filter_chains) {
 		// If the listener is terminating TLS consider it inbound
 		if (filterChain.tls_context) {
+			return true;
+		}
+		// If the listener is connected to filter_chain_match 
+		// with server_name *.global consider it inbound
+		if (filterChain.filter_chain_match 
+				&& filterChain.filter_chain_match.server_names
+				&& filterChain.filter_chain_match.server_names.length == 1
+				&& filterChain.filter_chain_match.server_names[0] == "*.global") {
 			return true;
 		}
 	}

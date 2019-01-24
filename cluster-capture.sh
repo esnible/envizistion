@@ -1,12 +1,10 @@
 #!/bin/bash
 set -o errexit
 
-SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 export CAPTURE_DIR=$1
 
 if [ -z "$CAPTURE_DIR" ]; then
-    echo "Usage: $0 <dirname>"
+    echo "Usage: $0 <dirname-for-results>"
     exit 1
 fi
 
