@@ -4,14 +4,23 @@ Envoy Visualization of Istio Configuration
 
 *Envizistion* attempts to summarize the Envoy configuration in human readable form.
 
+## Simple server
+
+The simple server expects to run co-located with Envoy or on a
+machine that has an Envoy instance admin port-forwarded.
+
+```
+kubectl port-forward <pod> 15000
+node vizserve.js
+```
+
+![Sample output](graphical.png?raw=true "Sample output")
+
 ## HTML output
 
 Usage `./gpodcheck.sh [--namespace <namespace>] <pod> > mark.html && open mark.html`
 
-![Sample output](graphical.png?raw=true "Sample output")
-
-I will try to get the code put into the Istio sidecar because the current output is too hard to search for misconfigurations.
-
+To view an entire namespace, `./gallpodcheck.sh [--namespace <namespace>]  > mark.html && open mark.html`
 
 ## Text output
 
