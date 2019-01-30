@@ -41,7 +41,7 @@ if [[ ! -z $NAMESPACE ]]; then
 fi
 
 >&2 echo Graphical PodCheck for $POD
-node $SCRIPTPATH/genhtml.js \
+node $SCRIPTPATH/vizfile.js \
 	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/config_dump) \
 	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/stats) \
 	<(kubectl $ARGS exec $POD -c istio-proxy -- curl --silent localhost:15000/certs) \

@@ -7,40 +7,6 @@
 
 "use strict";
 
-var fs = require('fs');
-
-function main() {
-	if (process.argv.length < 5) {
-		console.log("Usage: node genhtml.js config_dump.json stats.txt certs.json clusters.txt")
-		return 1
-	}
-	var configDumpName = process.argv[2];
-	var statsName = process.argv[3];
-	var certsName = process.argv[4];
-	var clustersName = process.argv[5] || "";
-
-	fs.readFile(configDumpName, 'utf8', function (err, configDumpData) {
-	    if (err) throw err;
-	    var configDump = JSON.parse(configDumpData);
-
-		fs.readFile(statsName, 'utf8', function (err, statsData) {
-		    if (err) throw err;
-
-			fs.readFile(certsName, 'utf8', function (err, certsData) {
-			    if (err) throw err;
-			    var certs = JSON.parse(certsData);
-
-			    fs.readFile(clustersName, 'utf8', function (err, endpointsData) {
-				    if (err && clustersName != "") { throw err; }
-				    processEnvoy11(configDump, statsData, processCertsJson11(certs), processColonText(endpointsData));
-			    });
-			});
-		});
-	});
-
-	return 0
-}
-
 // Given an Envoy configuration, generate a map of name=>name.replace('.', '~')
 // for every named thing that includes dots that we expect to see in stats
 function escapesFromConfig(config) {
@@ -1137,8 +1103,16 @@ function genHtml(configDump, stats, certs, clusterDefs) {
 	}
 }
 
-try {
-	main();
-} catch (err) {
-	process.exit(1);
+function captureOutput(func) {
+	// TODO Don't do this
+	var orig = console.log;
+	console.log = func;
+	return orig;
 }
+
+module.exports.processCertsJson11 = processCertsJson11;  
+module.exports.processColonText = processColonText;  
+module.exports.processEnvoy11 = processEnvoy11;
+
+// TODO This isn't safe if multiple requests arrive; refactor so processEnvoy11 writes results to caller.
+module.exports.captureOutput = captureOutput;  
