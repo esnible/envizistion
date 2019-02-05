@@ -255,9 +255,10 @@ function statPrefixHttp(listener) {
 	for (var filterChain of listener.filter_chains) {
 		for (var filter of filterChain.filters) {
 			if (filter.name == "envoy.http_connection_manager") {
-				if (filter.config) {
-					return filter.config.stat_prefix;
+				if (filter.typed_config) {
+					return filter.typed_config.stat_prefix;
 				}
+				return filter.config.stat_prefix;
 			}
 		}
 	}
@@ -269,9 +270,10 @@ function statPrefixTcp(listener) {
 	for (var filterChain of listener.filter_chains) {
 		for (var filter of filterChain.filters) {
 			if (filter.name == "envoy.tcp_proxy") {
-				if (filter.config) {
-					return filter.config.stat_prefix;
+				if (filter.typed_config) {
+					return filter.typed_config.stat_prefix;
 				}
+				return filter.config.stat_prefix;
 			}
 		}
 	}
@@ -339,8 +341,9 @@ function htmlListener(listener, stats, certs) {
 
 		for (var filter of filterChain.filters) {
 			if (filter.name == "envoy.http_connection_manager") {
-				if (Array.isArray(filter.config.http_filters)) {
-					for (var httpFilter of filter.config.http_filters) {
+				var config = (filter.typed_config) ? filter.typed_config : filter.config;
+				if (Array.isArray(config.http_filters)) {
+					for (var httpFilter of config.http_filters) {
 						if (httpFilter.name == "istio_authn") {
 							if (!authnShown) {
 								if (httpFilter.config && httpFilter.config.policy && Array.isArray(httpFilter.config.policy.peers)) {
@@ -806,19 +809,20 @@ function referencedRoutes(listener) {
 
 	for (var filterChain of listener.filter_chains) {
 		for (var filter of filterChain.filters) {
-			if (filter.name == "envoy.http_connection_manager" && filter.config) {
-				if (filter.config.route_config) {
-					if (!filter.config.route_config.name) {
+			if (filter.name == "envoy.http_connection_manager") {
+				var config = (filter.typed_config) ? filter.typed_config : filter.config;
+				if (config.route_config) {
+					if (!config.route_config.name) {
 						// Hack - give name to unnamed routes TODO fix
-						filter.config.route_config.name = filter.config.route_config.virtual_hosts[0].name;
+						config.route_config.name = config.route_config.virtual_hosts[0].name;
 					}
-					if (retval.indexOf(filter.config.route_config.name) < 0) {
-						retval.push(filter.config.route_config.name);
+					if (retval.indexOf(config.route_config.name) < 0) {
+						retval.push(config.route_config.name);
 					}
 				}
-				if (filter.config.rds) {
-					if (retval.indexOf(filter.config.rds.route_config_name) < 0) {
-						retval.push(filter.config.rds.route_config_name);
+				if (config.rds) {
+					if (retval.indexOf(config.rds.route_config_name) < 0) {
+						retval.push(config.rds.route_config_name);
 					}
 				}
 			}

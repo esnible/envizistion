@@ -20,7 +20,7 @@ var gen = require('./genhtml');
 
 function main() {
 	if (process.argv.length < 5) {
-		console.log("Usage: node genhtml.js config_dump.json stats.txt certs.json clusters.txt")
+		console.log("Usage: node vizfile.js config_dump.json stats.txt certs.json clusters.txt")
 		return 1
 	}
 	var configDumpName = process.argv[2];
