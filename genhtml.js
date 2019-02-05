@@ -255,7 +255,9 @@ function statPrefixHttp(listener) {
 	for (var filterChain of listener.filter_chains) {
 		for (var filter of filterChain.filters) {
 			if (filter.name == "envoy.http_connection_manager") {
-				return filter.config.stat_prefix;
+				if (filter.config) {
+					return filter.config.stat_prefix;
+				}
 			}
 		}
 	}
@@ -267,7 +269,9 @@ function statPrefixTcp(listener) {
 	for (var filterChain of listener.filter_chains) {
 		for (var filter of filterChain.filters) {
 			if (filter.name == "envoy.tcp_proxy") {
-				return filter.config.stat_prefix;
+				if (filter.config) {
+					return filter.config.stat_prefix;
+				}
 			}
 		}
 	}
@@ -802,7 +806,7 @@ function referencedRoutes(listener) {
 
 	for (var filterChain of listener.filter_chains) {
 		for (var filter of filterChain.filters) {
-			if (filter.name == "envoy.http_connection_manager") {
+			if (filter.name == "envoy.http_connection_manager" && filter.config) {
 				if (filter.config.route_config) {
 					if (!filter.config.route_config.name) {
 						// Hack - give name to unnamed routes TODO fix
