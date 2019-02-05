@@ -10,7 +10,7 @@ The simple server expects to run co-located with Envoy or on a
 machine that has an Envoy instance admin port-forwarded.
 
 ```
-kubectl port-forward <pod> 15000
+kubectl port-forward <pod> 15000 &
 node vizserve.js
 ```
 
