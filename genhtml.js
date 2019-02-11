@@ -377,7 +377,8 @@ function htmlListener(listener, stats, certs) {
 				// Ignore filter.config for mixer filters
 				console.log("-  Uses Istio Mixer<br>");
 			} else if (filter.name == "envoy.tcp_proxy") {
-				console.log("-  TCP cluster => " + filter.config.cluster + "<br>");
+				var config = (filter.typed_config) ? filter.typed_config : filter.config;
+				console.log("-  TCP cluster => " + config.cluster + "<br>");
 			} else if (filter.name == "envoy.filters.network.sni_cluster") {
 				console.log("-  Multicluster: Uses SNI name as cluster name<br>");
 				trafficExpected = false;
@@ -839,7 +840,8 @@ function listenerReferencedClusters(listener) {
 	for (var filterChain of listener.filter_chains) {
 		for (var filter of filterChain.filters) {
 			if (filter.name == "envoy.tcp_proxy") {
-				retval.push(filter.config.cluster);
+				var config = (filter.typed_config) ? filter.typed_config : filter.config;
+				retval.push(config.cluster);
 			}
 		}
 	}
