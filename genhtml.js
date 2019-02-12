@@ -860,6 +860,11 @@ function routeReferencedClustersWithTraffic(routeConfig, stats, clusterDefs, all
 	for (var virtualHost of routeConfig.virtual_hosts) {
 		var printedDomains = false;
 		for (var route of virtualHost.routes) {
+			if (!route.route) {
+				// instead of a route there might be a "direct_response":{"status":404}
+				continue;
+			}
+
 			// If the cluster is inbound show it even if there is no traffic
 			var cluster = allClusters[route.route.cluster];
 			if (!cluster) {
