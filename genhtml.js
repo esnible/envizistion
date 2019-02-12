@@ -304,7 +304,12 @@ function listenerHasTraffic(listener, stats, clusterDefs, allRoutes, allClusters
 	for (var routeName of referencedRoutes(listener)) {
 		var route = allRoutes[routeName];
 		if (route) {
-			if (routeReferencedClustersWithTraffic(route, stats, clusterDefs, allClusters, []).length > 0) {
+			var outProblems = [];
+			if (routeReferencedClustersWithTraffic(route, stats, clusterDefs, allClusters, outProblems).length > 0) {
+				return true;
+			}
+			// Consider a misconfigured route to be 'traffic'
+			if (outProblems.length > 0) {
 				return true;
 			}
 		}
@@ -859,10 +864,21 @@ function routeReferencedClustersWithTraffic(routeConfig, stats, clusterDefs, all
 			var cluster = allClusters[route.route.cluster];
 			if (!cluster) {
 				outMsgs.push("<span class='warning'>No Envoy definition of cluster " + route.route.cluster + "</span><br>");
+				// Create a dummy
+				var dummy = {
+						name: route.route.cluster,
+						type:"ERROR", 
+						listenerLink:{
+							filter_chains:[]
+						}
+				};
+				dummy.listenerLink.clusterLinks = [dummy];
+				allClusters[route.route.cluster] = dummy;
+				retval.push(route.route.cluster);
 				continue;
 			}
 			var bSocket = cluster.hosts && cluster.hosts.length > 0 && cluster.hosts[0].socket_address;
-			if (clusterHasTraffic(route.route.cluster, stats, clusterDefs, outMsgs) 
+			if (clusterHasTraffic(route.route.cluster, stats, clusterDefs, outMsgs)
 					|| route.route.cluster.startsWith("inbound|") 
 					|| bSocket) {
 				retval.push(route.route.cluster);
@@ -916,7 +932,7 @@ function linkEnvoy(listener, route, cluster) {
 		}
 	}
 
-	if (route) {
+	if (route && cluster) {
 		if (cluster.routeLink) {
 			if (!(cluster.routeLink === route)) {
 				// already "contained" by another route for tree view
