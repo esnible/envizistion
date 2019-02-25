@@ -207,7 +207,12 @@ function processCertsJson11(rawCerts) {
 	return retval;
 }
 
-function clusterHasTraffic(clusterName, stats, clusterDefs, outMsgs) {
+// Returns true if the cluster has traffic (or if it should be shown anyway)
+function clusterHasTraffic(clusterName, stats, clusterDefs, outMsgs, flags) {
+	if (flags.showAll) {
+		return true;
+	}
+
 	var clusterStats = stats.cluster[clusterName];
 	if (clusterStats) {
 		return clusterStats.upstream_rq_2xx > 0
@@ -293,7 +298,7 @@ function statsForListener(listener, stats) {
 	return {};
 }
 
-function listenerHasTraffic(listener, stats, clusterDefs, allRoutes, allClusters) {
+function listenerHasTraffic(listener, stats, clusterDefs, allRoutes, allClusters, flags) {
 	var lstats = statsForListener(listener, stats);
 	if ("downstream_cx_total" in lstats) {
 		return lstats.downstream_cx_total > 0;
@@ -305,7 +310,7 @@ function listenerHasTraffic(listener, stats, clusterDefs, allRoutes, allClusters
 		var route = allRoutes[routeName];
 		if (route) {
 			var outProblems = [];
-			if (routeReferencedClustersWithTraffic(route, stats, clusterDefs, allClusters, outProblems).length > 0) {
+			if (routeReferencedClustersWithTraffic(route, stats, clusterDefs, allClusters, outProblems, flags).length > 0) {
 				return true;
 			}
 			// Consider a misconfigured route to be 'traffic'
@@ -503,7 +508,7 @@ function unknownCluster(clusterName, allClusters) {
 	return !allClusters[clusterName];
 }
 
-function htmlRoute(routeConfig, stats, clusterDefs, allClusters, outMsgs) {
+function htmlRoute(routeConfig, stats, clusterDefs, allClusters, outMsgs, flags) {
 	if (!routeConfig.name) {
 		return; // Ignore "virtualHost" style route
 	}
@@ -515,7 +520,7 @@ function htmlRoute(routeConfig, stats, clusterDefs, allClusters, outMsgs) {
 		var printedDomains = false;
 		// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-route
 		for (var route of virtualHost.routes) {
-			if (clusterHasTraffic(route.route.cluster, stats, clusterDefs, outMsgs)
+			if (clusterHasTraffic(route.route.cluster, stats, clusterDefs, outMsgs, flags)
 					|| route.route.cluster.startsWith("inbound|")
 					|| unknownCluster(route.route.cluster, allClusters)) {
 				clustersDisplayed++;
@@ -671,12 +676,12 @@ function inboundListener(listener) {
 	return false;
 }
 
-function processEnvoy11(configDump, rawStats, certs, clusterDefs) {
+function processEnvoy11(configDump, rawStats, certs, clusterDefs, flags) {
 	// Is this a Envoy 1.0 format?
 	if (configDump.configs.bootstrap) {
 		var escapes = escapesFromConfig(configDump);
 		return genHtml(configDump, processDottedText(rawStats, escapes), certs,
-				clusterDefs);
+				clusterDefs, flags);
 	}
 
 	// each config has a "@type":
@@ -703,7 +708,7 @@ function processEnvoy11(configDump, rawStats, certs, clusterDefs) {
     var escapes = escapesFromConfig(configDump10);
 
 	genHtml(configDump10, processDottedText(rawStats, escapes), certs,
-			clusterDefs);
+			clusterDefs, flags);
 }
 
 function sourceId(configDump) {
@@ -748,7 +753,7 @@ function htmlBootstrap(bootstrap) {
 		console.log('<span class="envoy">Istio version: ' + bootstrap.bootstrap.node.metadata.ISTIO_VERSION + "</span><br>");
 	}
 	console.log("<span class='envoy'>Envoy version: " + bootstrap.bootstrap.node.build_version + "</span><br>");
-	console.log();
+	console.log("<br>");
 }
 
 function allListeners(configDump) {
@@ -788,6 +793,7 @@ function routesByName(configDump) {
 	return retval;
 }
 
+// Return a map of name->cluster
 function clustersByName(configDump) {
 	var retval = {};
 	if (configDump.configs.clusters) {
@@ -805,8 +811,9 @@ function clustersByName(configDump) {
 	return retval;
 }
 
-function showListenerp(listener, stats, clusterDefs, allRoutes, allClusters) {
-	return listenerHasTraffic(listener, stats, clusterDefs, allRoutes, allClusters) || inboundListener(listener);
+// Returns true if this listener show appear in filtered UI
+function showListenerp(listener, stats, clusterDefs, allRoutes, allClusters, flags) {
+	return listenerHasTraffic(listener, stats, clusterDefs, allRoutes, allClusters, flags) || inboundListener(listener);
 }
 
 // referencedRoutes() returns an array of route names
@@ -854,7 +861,7 @@ function listenerReferencedClusters(listener) {
 	return retval;
 }
 
-function routeReferencedClustersWithTraffic(routeConfig, stats, clusterDefs, allClusters, outMsgs) {
+function routeReferencedClustersWithTraffic(routeConfig, stats, clusterDefs, allClusters, outMsgs, flags) {
 	var retval = [];
 
 	for (var virtualHost of routeConfig.virtual_hosts) {
@@ -883,7 +890,7 @@ function routeReferencedClustersWithTraffic(routeConfig, stats, clusterDefs, all
 				continue;
 			}
 			var bSocket = cluster.hosts && cluster.hosts.length > 0 && cluster.hosts[0].socket_address;
-			if (clusterHasTraffic(route.route.cluster, stats, clusterDefs, outMsgs)
+			if (clusterHasTraffic(route.route.cluster, stats, clusterDefs, outMsgs, flags)
 					|| route.route.cluster.startsWith("inbound|") 
 					|| bSocket) {
 				retval.push(route.route.cluster);
@@ -894,7 +901,7 @@ function routeReferencedClustersWithTraffic(routeConfig, stats, clusterDefs, all
 	return retval;
 }
 
-function referencedListeners(configDump, stats, clusterDefs, allRoutes, allClusters) {
+function referencedListeners(configDump, stats, clusterDefs, allRoutes, allClusters, flags) {
 	var visibleListeners = [];
 	for (var listener of allListeners(configDump)) {
 		if (!listener.name) {
@@ -903,7 +910,7 @@ function referencedListeners(configDump, stats, clusterDefs, allRoutes, allClust
 				listener.name = "Anonymous " + listener.address.socket_address.address + "_" + listener.address.socket_address.port_value;
 			}
 		}
-		if (showListenerp(listener, stats, clusterDefs, allRoutes, allClusters)) {
+		if (showListenerp(listener, stats, clusterDefs, allRoutes, allClusters, flags)) {
 			visibleListeners.push(listener);
 		}
 	}
@@ -964,10 +971,10 @@ function linkEnvoy(listener, route, cluster) {
 }
 
 // Mutate data structure linking listener, route, and clusters directly
-function linkListeners(configDump, stats, clusterDefs, allClusters, outMsgs) {
+function linkListeners(configDump, stats, clusterDefs, allClusters, outMsgs, flags) {
 	var allRoutes = routesByName(configDump);
 
-	var listeners = referencedListeners(configDump, stats, clusterDefs, allRoutes, allClusters);
+	var listeners = referencedListeners(configDump, stats, clusterDefs, allRoutes, allClusters, flags);
 	var clustersShown = [];
 	for (var listener of listeners) {
 		var clusters = listenerReferencedClusters(listener);
@@ -986,7 +993,7 @@ function linkListeners(configDump, stats, clusterDefs, allClusters, outMsgs) {
 			var route = allRoutes[routeName];
 			if (route) {
 				route.listenerLink = listener;
-				var clusters = routeReferencedClustersWithTraffic(route, stats, clusterDefs, allClusters, outMsgs);
+				var clusters = routeReferencedClustersWithTraffic(route, stats, clusterDefs, allClusters, outMsgs, flags);
 				for (var clusterName of clusters) {
 					clustersShown.push(clusterName);
 					var cluster = allClusters[clusterName];
@@ -1002,7 +1009,7 @@ function linkListeners(configDump, stats, clusterDefs, allClusters, outMsgs) {
 	var fakeListener = {name: "", filter_chains: []};
 	var fakeRoute = {name: ""};
 	for (var clusterName of Object.keys(allClusters)) {
-		if (clustersShown.indexOf(clusterName) < 0 && clusterHasTraffic(clusterName, stats, clusterDefs, outMsgs)) {
+		if (clustersShown.indexOf(clusterName) < 0 && clusterHasTraffic(clusterName, stats, clusterDefs, outMsgs, flags)) {
 			var cluster = allClusters[clusterName];
 			clustersShown.push(clusterName);
 			linkEnvoy(fakeListener, fakeRoute, cluster);
@@ -1016,12 +1023,12 @@ function linkListeners(configDump, stats, clusterDefs, allClusters, outMsgs) {
 	return listeners;
 }
 
-function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
+function genTable(configDump, stats, certs, clusterDefs, outMsgs, flags) {
 	console.log("<p><table border=1 frame=hsides rules=rows>")
 	console.log("<tr><th align='center'>Listeners</th><th align='center'>Routes</th><th align='center'>Clusters</th><th align='center'>Endpoints</th></tr>");
 
 	var allClusters = clustersByName(configDump);
-	var listenerTree = linkListeners(configDump, stats, clusterDefs, allClusters, outMsgs);
+	var listenerTree = linkListeners(configDump, stats, clusterDefs, allClusters, outMsgs, flags);
 
 	// Filter for clusters that were linked
 	var visibleClusters = Object.keys(allClusters).filter(function(clusterName) { return allClusters[clusterName].listenerLink; });
@@ -1059,7 +1066,7 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 			if (cluster.listenerLink.name) {
 				for (var listener of cluster.listenerReferences.concat(cluster.listenerLink)) {
 					htmlListener(listener, stats, certs);
-					if (listenerHasTraffic(listener, stats, clusterDefs, routesByName(configDump), allClusters)) {
+					if (listenerHasTraffic(listener, stats, clusterDefs, routesByName(configDump), allClusters, flags)) {
 						listenersWithTraffic++;
 					}
 					if (inboundListener(listener)) {
@@ -1075,7 +1082,7 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 			if (prevRouteName != cluster.routeLink.name) {
 				console.log('<td valign="middle" rowspan="' + cluster.routeLink.clusterLinks.length + '">');
 				for (var route of cluster.routeReferences.concat(cluster.routeLink)) {
-					htmlRoute(route, stats, clusterDefs, allClusters, outMsgs);
+					htmlRoute(route, stats, clusterDefs, allClusters, outMsgs, flags);
 				}
 				console.log('</td>');
 				prevRouteName = cluster.routeLink.name;
@@ -1106,7 +1113,7 @@ function genTable(configDump, stats, certs, clusterDefs, outMsgs) {
 }
 
 
-function genHtml(configDump, stats, certs, clusterDefs) {
+function genHtml(configDump, stats, certs, clusterDefs, flags) {
 	if (!process.env.ENVIZISTION_BODY_ONLY) {
 		console.log("<!DOCTYPE html>");
 		console.log("<html>");
@@ -1130,7 +1137,7 @@ function genHtml(configDump, stats, certs, clusterDefs) {
 		}
 	}
 
-	genTable(configDump, stats, certs, clusterDefs, outMsgs);
+	genTable(configDump, stats, certs, clusterDefs, outMsgs, flags);
 	
 	// Uniquify
 	outMsgs = outMsgs.filter(function(val, i, self) { return self.indexOf(val) === i; });

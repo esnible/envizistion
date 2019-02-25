@@ -16,11 +16,14 @@
 "use strict";
 
 var http = require('http');
+var url = require('url');
 var fs = require('fs');
 var gen = require('./genhtml');
 
 http.createServer(function (req, res) {
-	if (req.url == "/") {
+	var parsedUrl = url.parse(req.url, true);
+	var queryData = parsedUrl.query;
+	if (parsedUrl.pathname == "/") {
 		getEnvoyConfig(function (err, html) {
 			if (err) {
 				res.write(err.toString());
@@ -29,8 +32,8 @@ http.createServer(function (req, res) {
 				res.write(html)
 			}
 			res.end(); //end the response
-		});
-	} else if (req.url == "/genhtml.css") {
+		}, queryData.showall != null);
+	} else if (parsedUrl.pathname == "/genhtml.css") {
 		res.end(fs.readFileSync(__dirname + req.url));
 	} else {
 		console.log("Unexpected url=" + req.url);
@@ -39,7 +42,11 @@ http.createServer(function (req, res) {
 	}
 }).listen(15001);
 
-function getEnvoyConfig(func) {
+console.log("Listening on 15001");
+
+// 'func' takes the output
+// If showAllClusters, show all clusters not just those with traffic
+function getEnvoyConfig(func, showAllClusters) {
 	getData('/config_dump', function (err, configDumpData) {
 	    if (err) { func(err, null); return; }
 	    var configDump = JSON.parse(configDumpData);
@@ -48,20 +55,24 @@ function getEnvoyConfig(func) {
 		    if (err) { func(err, null); return; }
 
 			getData('/certs', function (err, certsData) {
-			    if (err) { func(err, null); return; }
-			    var certs = JSON.parse(certsData);
+				if (err) { func(err, null); return; }
+				var certs = JSON.parse(certsData);
 
-			    getData('/clusters', function (err, endpointsData) {
-				    if (err) { func(err, null); return; }
+				getData('/clusters', function (err, endpointsData) {
+					if (err) { func(err, null); return; }
 
-				    var accum = '';
-				    var orig = gen.captureOutput(function (s) {
-				    	accum = accum + s;
-				    })
-				    gen.processEnvoy11(configDump, statsData, gen.processCertsJson11(certs), gen.processColonText(endpointsData));
-				    gen.captureOutput(orig);
-				    func(null, accum);
-			    });
+					var accum = '';
+					var orig = gen.captureOutput(function (s) {
+						accum = accum + s;
+					})
+					gen.processEnvoy11(configDump, 
+							statsData,
+							gen.processCertsJson11(certs),
+							gen.processColonText(endpointsData),
+							{showAll: showAllClusters});
+					gen.captureOutput(orig);
+					func(null, accum);
+				});
 			});
 		});
 	});
