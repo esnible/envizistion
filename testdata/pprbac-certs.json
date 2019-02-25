@@ -1,0 +1,940 @@
+{
+ "certificates": [
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  },
+  {
+   "ca_cert": [
+    {
+     "path": "/etc/certs/root-cert.pem",
+     "serial_number": "5f431d6a4f09e08793bcb84a76c75626",
+     "subject_alt_names": [],
+     "days_until_expiration": "361",
+     "valid_from": "2019-02-22T15:10:16Z",
+     "expiration_time": "2020-02-22T15:10:16Z"
+    }
+   ],
+   "cert_chain": [
+    {
+     "path": "/etc/certs/cert-chain.pem",
+     "serial_number": "bbe1fb6a3905ff1124b541f3c66d5cf9",
+     "subject_alt_names": [
+      {
+       "uri": "spiffe://cluster.local/ns/default/sa/default"
+      }
+     ],
+     "days_until_expiration": "86",
+     "valid_from": "2019-02-22T15:10:27Z",
+     "expiration_time": "2019-05-23T15:10:27Z"
+    }
+   ]
+  }
+ ]
+}

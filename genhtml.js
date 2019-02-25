@@ -378,6 +378,8 @@ function htmlListener(listener, stats, certs) {
 							if (httpFilter.config) {
 								console.log("-  configured fault<br>");
 							}
+						} else if (httpFilter.name == "envoy.filters.http.rbac") {
+							console.log("- RBAC " + JSON.stringify(httpFilter.typed_config.shadow_rules.policies) + "<br>");
 						} else {
 							console.log("-  UNSUPPORT DUMP for http_filter type name: " + httpFilter.name + " which has keys " + Object.keys(httpFilter) + "<br>");
 						}

@@ -235,13 +235,14 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 
 		for (var filter of filterChain.filters) {
 			if (filter.name == "envoy.http_connection_manager") {
-				if (filter.config.route_config) {
+				var config = (filter.typed_config) ? filter.typed_config : filter.config;
+				if (config.route_config) {
 					// console.log("  HTTP Connection Mgr filterChain[i].filters[j].config.route_config has keys " + Object.keys(filter.config.route_config));
-					console.log("  Route: '" + filter.config.route_config.name + "'");
-					outRoutes.push(filter.config.route_config.name);
+					console.log("  Route: '" + config.route_config.name + "'");
+					outRoutes.push(config.route_config.name);
 					// Ignore the other fields; they will be shown with Routes
 				}
-				if (filter.config.rds) {
+				if (config.rds) {
 					// console.log("  HTTP Connection Mgr filterChain[i].filters[j].config.rds has keys " + Object.keys(filter.config.rds));
 					console.log("  RDS Route: '" + filter.config.rds.route_config_name + "'");
 					outRoutes.push(filter.config.rds.route_config_name);
