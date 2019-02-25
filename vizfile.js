@@ -41,7 +41,8 @@ function main() {
 
 			    fs.readFile(clustersName, 'utf8', function (err, endpointsData) {
 				    if (err && clustersName != "") { throw err; }
-				    gen.processEnvoy11(configDump, statsData, gen.processCertsJson11(certs), gen.processColonText(endpointsData), {});
+				    var showAllClusters = process.env.SHOWALL; 
+				    gen.processEnvoy11(configDump, statsData, gen.processCertsJson11(certs), gen.processColonText(endpointsData), {showAll: showAllClusters});
 			    });
 			});
 		});
