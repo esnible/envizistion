@@ -299,6 +299,10 @@ function statsForListener(listener, stats) {
 }
 
 function listenerHasTraffic(listener, stats, clusterDefs, allRoutes, allClusters, flags) {
+	if (flags.showAll) {
+		return true;
+	}
+
 	var lstats = statsForListener(listener, stats);
 	if ("downstream_cx_total" in lstats) {
 		return lstats.downstream_cx_total > 0;
@@ -881,17 +885,11 @@ function routeReferencedClustersWithTraffic(routeConfig, stats, clusterDefs, all
 			if (!cluster) {
 				outMsgs.push("<span class='warning'>No Envoy definition of cluster " + route.route.cluster + "</span><br>");
 				// Create a dummy
-				var dummy = {
+				cluster = {
 						name: route.route.cluster,
-						type:"ERROR", 
-						listenerLink:{
-							filter_chains:[]
-						}
+						type:"ERROR/UNDEFINED"
 				};
-				dummy.listenerLink.clusterLinks = [dummy];
-				allClusters[route.route.cluster] = dummy;
-				retval.push(route.route.cluster);
-				continue;
+				allClusters[cluster.name] = cluster;
 			}
 			var bSocket = cluster.hosts && cluster.hosts.length > 0 && cluster.hosts[0].socket_address;
 			if (clusterHasTraffic(route.route.cluster, stats, clusterDefs, outMsgs, flags)
