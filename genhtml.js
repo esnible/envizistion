@@ -545,8 +545,11 @@ function htmlRoute(routeConfig, stats, clusterDefs, allClusters, outMsgs, flags)
 				}
 				console.log("<div class='route-route'>");
 				console.log("    " + htmlMatch(route.match) + " => " + route.route.cluster + "<br>");
-				if (route.route.host_rewrite) {
-					console.log("      (rewritten " + route.route.host_rewrite + ")<br>");
+				if (route.route.host_rewrite || route.route.prefix_rewrite) {
+					console.log("      (rewritten " + route.route.host_rewrite + (route.route.prefix_rewrite || "/") + ")<br>");
+				}
+				if (route.route.retry_policy) {
+					console.log("      (" + route.route.retry_policy.num_retries + " retries)<br>");
 				}
 				if (route.per_filter_config) {
 					htmlPerFilterConfig(route.per_filter_config);
