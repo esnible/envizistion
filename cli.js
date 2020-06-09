@@ -205,6 +205,9 @@ function clusterHasTraffic(cluster, stats) {
 }
 
 function listenerHasTraffic(listener, stats) {
+	if (process.env.SHOWALL) {
+		return true;
+	}
 	if (!stats.listener || !(listener in stats.listener)) { // e.g. "virtual"
 		return false;
 	}
@@ -244,8 +247,8 @@ function printListener(listener, stats, certs, outRoutes, outClusters) {
 				}
 				if (config.rds) {
 					// console.log("  HTTP Connection Mgr filterChain[i].filters[j].config.rds has keys " + Object.keys(filter.config.rds));
-					console.log("  RDS Route: '" + filter.config.rds.route_config_name + "'");
-					outRoutes.push(filter.config.rds.route_config_name);
+					console.log("  RDS Route: '" + config.rds.route_config_name + "'");
+					outRoutes.push(config.rds.route_config_name);
 				}
 			} else if (filter.name == "mixer") {
 				// Ignore filter.config for mixer filters
@@ -423,6 +426,12 @@ function processEnvoy11(configDump, rawStats, certs) {
 			["type.googleapis.com/envoy.admin.v2alpha.ClustersConfigDump"]: "clusters",
 			["type.googleapis.com/envoy.admin.v2alpha.ListenersConfigDump"]: "listeners",
 			["type.googleapis.com/envoy.admin.v2alpha.RoutesConfigDump"]: "routes",
+			["type.googleapis.com/envoy.admin.v3.BootstrapConfigDump"]: "bootstrap",
+			["type.googleapis.com/envoy.admin.v3.ClustersConfigDump"]: "clusters",
+			["type.googleapis.com/envoy.admin.v3.ListenersConfigDump"]: "listeners",
+			["type.googleapis.com/envoy.admin.v3.RoutesConfigDump"]: "routes",
+			["type.googleapis.com/envoy.admin.v3.ScopedRoutesConfigDump"]: "scopedroutes",	// TODO
+			["type.googleapis.com/envoy.admin.v3.SecretsConfigDump"]: "secrets", // TODO
 	}
 	for (var config of configDump.configs) {
 		if (config["@type"] in lookup) {
@@ -452,6 +461,12 @@ function allListeners(configDump) {
 		if (configDump.configs.listeners.dynamic_active_listeners) {
 			retval = retval.concat(configDump.configs.listeners.dynamic_active_listeners
 					.map(function(l) { return l.listener; }));
+		}
+		if (configDump.configs.listeners.dynamic_listeners) {
+			retval = retval.concat(configDump.configs.listeners.dynamic_listeners
+					.map(function(l) {
+						return l.active_state.listener;
+						}));
 		}
 		if (configDump.configs.listeners.static_listeners) {
 			retval = retval.concat(configDump.configs.listeners.static_listeners

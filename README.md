@@ -85,3 +85,18 @@ Email/Slack snible@us.ibm.com to collaborate.
 Test offline by downloading pod:15000/config_dump, /stats, and /certs and running `node cli.js <config_dump> <stats> <certs>`.  For example `node ./cli.js testdata/pp-config_dump.json testdata/pp-stats.txt testdata/pp-certs.json`
 
 Before pushing run _testdata/testcases.sh_.  If it concludes with "Tests pass" then the code is probably OK.
+
+## Adding a new test case
+
+POD=istio-ingressgateway-665c77966f-qb67c
+NS=istio-system
+PREFIX=is160
+kubectl -n $NS exec $POD -c istio-proxy -- curl localhost:15000/config_dump > $PREFIX-config_dump.json
+kubectl -n $NS exec $POD -c istio-proxy -- curl localhost:15000/certs > $PREFIX-certs.json
+kubectl -n $NS exec $POD -c istio-proxy -- curl localhost:15000/stats > $PREFIX-stats.txt
+kubectl -n $NS exec $POD -c istio-proxy -- curl localhost:15000/clusters  > $PREFIX-clusters.txt
+
+Get the new data working with `node vizfile.js testdata/${PREFIX}-config_dump.json testdata/${PREFIX}-stats.txt testdata/${PREFIX}-certs.json testdata/${PREFIX}-clusters.txt` and `node cli.js testdata/${PREFIX}-config_dump.json testdata/${PREFIX}-stats.txt testdata/${PREFIX}-certs.json testdata/${PREFIX}-clusters.txt`
+
+Add the new prefix to _testdata/testcases.sh_
+

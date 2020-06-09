@@ -706,6 +706,12 @@ function processEnvoy11(configDump, rawStats, certs, clusterDefs, flags) {
 			["type.googleapis.com/envoy.admin.v2alpha.ClustersConfigDump"]: "clusters",
 			["type.googleapis.com/envoy.admin.v2alpha.ListenersConfigDump"]: "listeners",
 			["type.googleapis.com/envoy.admin.v2alpha.RoutesConfigDump"]: "routes",
+			["type.googleapis.com/envoy.admin.v3.BootstrapConfigDump"]: "bootstrap",
+			["type.googleapis.com/envoy.admin.v3.ClustersConfigDump"]: "clusters",
+			["type.googleapis.com/envoy.admin.v3.ListenersConfigDump"]: "listeners",
+			["type.googleapis.com/envoy.admin.v3.RoutesConfigDump"]: "routes",
+			["type.googleapis.com/envoy.admin.v3.ScopedRoutesConfigDump"]: "scopedroutes",	// TODO
+			["type.googleapis.com/envoy.admin.v3.SecretsConfigDump"]: "secrets", // TODO
 	}
 	for (var config of configDump.configs) {
 		if (config["@type"] in lookup) {
@@ -773,6 +779,12 @@ function allListeners(configDump) {
 		if (configDump.configs.listeners.dynamic_active_listeners) {
 			retval = retval.concat(configDump.configs.listeners.dynamic_active_listeners
 					.map(function(l) { return l.listener; }));
+		}
+		if (configDump.configs.listeners.dynamic_listeners) {
+			retval = retval.concat(configDump.configs.listeners.dynamic_listeners
+					.map(function(l) {
+						return l.active_state.listener;
+						}));
 		}
 		if (configDump.configs.listeners.static_listeners) {
 			retval = retval.concat(configDump.configs.listeners.static_listeners
